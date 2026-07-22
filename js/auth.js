@@ -239,9 +239,9 @@ function initLocalDb() {
   ];
 
   const usuarios = [
-    { id: 1, nome: 'Administrador Sistema', email: 'admin@labsystem.com', papel: 'admin', senha: 'Admin@123' },
-    { id: 2, nome: 'Dr. Carlos Silva - Biomédico', email: 'biomedico@labsystem.com', papel: 'biomedico', senha: 'Bio@123' },
-    { id: 3, nome: 'Ana Paula - Recepção', email: 'recepcao@labsystem.com', papel: 'recepcao', senha: 'Rec@123' }
+    { id: 1, nome: 'Administrador LEAC', email: 'admin@leac.com', papel: 'admin', senha: 'Admin@123' },
+    { id: 2, nome: 'Dr. Carlos Silva - Biomédico', email: 'biomedico@leac.com', papel: 'biomedico', senha: 'Bio@123' },
+    { id: 3, nome: 'Ana Paula - Recepção', email: 'recepcao@leac.com', papel: 'recepcao', senha: 'Rec@123' }
   ];
 
   const logs = [
