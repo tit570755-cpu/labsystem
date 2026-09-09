@@ -18,17 +18,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Autenticando...';
         btn.disabled = true;
         
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.style.display = 'none'; // hide error initially
+        
         // Mock authentication (simulate network request)
         setTimeout(() => {
-            if (email === 'admin@lab.com' && password === 'senha123') {
+            const users = {
+                'admin@lab.com': { id: 1, name: 'Dra. Ana Silva', role: 'administrador', crbm: '12345-CRBM' },
+                'bio@lab.com': { id: 2, name: 'Dr. Carlos Mendes', role: 'biomedico', crbm: '54321-CRBM' },
+                'recepcao@lab.com': { id: 3, name: 'Juliana Costa', role: 'recepcao' }
+            };
+
+            if (users[email] && password === '123') {
                 // Generate fake token and user data
-                const user = {
-                    id: 1,
-                    name: 'Dra. Ana Silva',
-                    email: 'admin@lab.com',
-                    role: 'administrador',
-                    crbm: '12345-CRBM'
-                };
+                const user = { ...users[email], email };
                 
                 localStorage.setItem('labsystem_token', 'mock_jwt_token_123abc');
                 localStorage.setItem('labsystem_user', JSON.stringify(user));
@@ -47,8 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
-                alert('Credenciais inválidas. Use: admin@lab.com / senha123');
+                errorDiv.style.display = 'block';
+                
+                // Add shake animation again if already visible
+                errorDiv.style.animation = 'none';
+                errorDiv.offsetHeight; // trigger reflow
+                errorDiv.style.animation = 'shake 0.4s ease-in-out';
             }
-        }, 1000);
+        }, 800);
     });
 });
