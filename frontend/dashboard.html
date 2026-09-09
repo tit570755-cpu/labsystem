@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - LabSystem</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-flask-vial"></i> LabSystem
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                <a href="patients.html" class="nav-item"><i class="fa-solid fa-users"></i> Pacientes</a>
+                <a href="requests.html" class="nav-item"><i class="fa-solid fa-file-medical"></i> Requisições</a>
+                <a href="exams.html" class="nav-item"><i class="fa-solid fa-vial"></i> Exames & Resultados</a>
+                <a href="reports.html" class="nav-item"><i class="fa-solid fa-file-pdf"></i> Laudos</a>
+                <a href="finance.html" class="nav-item"><i class="fa-solid fa-wallet"></i> Financeiro</a>
+                <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <a href="users.html" class="nav-item"><i class="fa-solid fa-user-shield"></i> Gestão de Acessos</a>
+                    <a href="lgpd.html" class="nav-item"><i class="fa-solid fa-shield-halved"></i> Auditoria LGPD</a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div>
+                    <span style="color: var(--text-muted); font-size: 0.875rem;">Bem-vindo(a) de volta,</span>
+                    <div style="font-weight: 600; font-size: 1.1rem;" class="user-name">Carregando...</div>
+                </div>
+                
+                <div class="user-profile">
+                    <button class="btn btn-secondary" style="border-radius: 50%; width: 40px; height: 40px; padding: 0;">
+                        <i class="fa-regular fa-bell"></i>
+                    </button>
+                    <div class="avatar">U</div>
+                    <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                        <span style="font-weight: 600; font-size: 0.875rem;" class="user-name">User</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);" class="user-role">Role</span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-danger" style="margin-left: 1rem;">
+                        <i class="fa-solid fa-power-off"></i> Sair
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <div class="page-header">
+                    <h1 class="page-title">Visão Geral</h1>
+                    <button class="btn btn-primary">
+                        <i class="fa-solid fa-plus"></i> Nova Requisição
+                    </button>
+                </div>
+
+                <!-- Dashboard Grid -->
+                <div class="dashboard-grid">
+                    <div class="card stat-card">
+                        <div class="stat-icon primary"><i class="fa-solid fa-file-medical"></i></div>
+                        <div class="stat-details">
+                            <h3>Requisições Hoje</h3>
+                            <p id="stat-requests">24</p>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon warning"><i class="fa-solid fa-microscope"></i></div>
+                        <div class="stat-details">
+                            <h3>Exames Pendentes</h3>
+                            <p id="stat-pending">12</p>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon success"><i class="fa-solid fa-check-double"></i></div>
+                        <div class="stat-details">
+                            <h3>Laudos Liberados</h3>
+                            <p id="stat-released">45</p>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="stat-details">
+                            <h3>Resultados Críticos</h3>
+                            <p id="stat-critical">2</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Area -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem; font-size: 1rem;">Volume de Exames (Últimos 7 dias)</h3>
+                        <canvas id="volumeChart" height="250"></canvas>
+                    </div>
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem; font-size: 1rem;">Status dos Exames</h3>
+                        <canvas id="statusChart" height="250"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Requests Table -->
+                <div class="card">
+                    <div class="flex justify-between items-center" style="margin-bottom: 1rem;">
+                        <h3 style="font-size: 1rem;">Últimas Requisições</h3>
+                        <a href="requests.html" style="font-size: 0.875rem;">Ver todas</a>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>OS / Protocolo</th>
+                                    <th>Paciente</th>
+                                    <th>Data/Hora</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-requests-table">
+                                <tr>
+                                    <td><strong>#20260901</strong></td>
+                                    <td>João Carlos Silva</td>
+                                    <td>09/09/2026 18:30</td>
+                                    <td><span class="badge badge-pending">Pendente</span></td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;"><i class="fa-solid fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>#20260900</strong></td>
+                                    <td>Maria Oliveira Souza</td>
+                                    <td>09/09/2026 17:45</td>
+                                    <td><span class="badge badge-analyzing">Em Análise</span></td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;"><i class="fa-solid fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Volume Chart
+            const ctxVol = document.getElementById('volumeChart').getContext('2d');
+            new Chart(ctxVol, {
+                type: 'line',
+                data: {
+                    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                    datasets: [{
+                        label: 'Exames Realizados',
+                        data: [45, 52, 38, 65, 59, 20, 15],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+
+            // Status Chart
+            const ctxStatus = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Liberados', 'Em Análise', 'Pendentes'],
+                    datasets: [{
+                        data: [65, 20, 15],
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%' }
+            });
+        });
+    </script>
+</body>
+</html>

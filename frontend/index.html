@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LabSystem - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="card login-card">
+            <div class="login-logo">
+                <i class="fa-solid fa-flask-vial"></i> LabSystem
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="email">E-mail Corporativo</label>
+                    <input type="email" id="email" class="form-control" placeholder="usuario@labsystem.com.br" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Senha</label>
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                </div>
+                
+                <div class="form-group flex justify-between items-center" style="margin-bottom: 2rem;">
+                    <label class="flex items-center gap-2" style="font-size: 0.875rem; color: var(--text-secondary); cursor: pointer;">
+                        <input type="checkbox"> Lembrar-me
+                    </label>
+                    <a href="#" style="font-size: 0.875rem;">Esqueceu a senha?</a>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
+                    Entrar no Sistema <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                </button>
+            </form>
+            
+            <div style="text-align: center; margin-top: 2rem; font-size: 0.75rem; color: var(--text-muted);">
+                <p>Acesso restrito a funcionários autorizados.</p>
+                <p>Monitorado conforme LGPD e políticas de segurança.</p>
+                <p style="margin-top: 1rem;"><strong>Demo:</strong> admin@lab.com / senha123</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/login.js"></script>
+</body>
+</html>

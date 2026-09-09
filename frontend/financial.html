@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relatórios Financeiros – LabSystem</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="api.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --surface2: #21262d;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --accent:   #58a6ff;
+      --green:    #3fb950;
+      --red:      #f85149;
+      --yellow:   #d29922;
+      --purple:   #bc8cff;
+      --radius:   8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text);
+      display: flex; min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 240px; min-height: 100vh;
+      background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sidebar-logo .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      border-radius: 8px; display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 16px; color: #fff;
+    }
+    .sidebar-logo span { font-size: 18px; font-weight: 700; }
+    .sidebar-nav { flex: 1; padding: 12px 0; }
+    .nav-section { padding: 8px 16px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+    .nav-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; color: var(--muted); text-decoration: none;
+      font-size: 14px; border-left: 3px solid transparent; transition: all .15s;
+    }
+    .nav-link:hover { color: var(--text); background: var(--surface2); }
+    .nav-link.active { color: var(--accent); border-left-color: var(--accent); background: rgba(88,166,255,.08); }
+    .nav-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); }
+    .user-chip { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: var(--radius); cursor: pointer; }
+    .user-chip:hover { background: var(--surface2); }
+    .avatar-sm {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg,#58a6ff,#bc8cff);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .user-chip-info { flex: 1; min-width: 0; }
+    .user-chip-name { font-size: 13px; font-weight: 600; }
+    .user-chip-role { font-size: 11px; color: var(--muted); }
+
+    /* ── Main ── */
+    .main { margin-left: 240px; flex: 1; padding: 32px; }
+
+    /* ── Page Header ── */
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+    .page-header h1 { font-size: 24px; font-weight: 700; }
+    .page-header p { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--radius);
+      font-size: 14px; font-weight: 500; cursor: pointer;
+      border: 1px solid transparent; transition: all .15s;
+    }
+    .btn-primary  { background: var(--accent); color: #0d1117; border-color: var(--accent); }
+    .btn-primary:hover { background: #79b8ff; }
+    .btn-secondary{ background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover { background: var(--surface2); }
+    .btn-success  { background: transparent; color: var(--green); border-color: var(--green); }
+    .btn-success:hover { background: rgba(63,185,80,.1); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* ── Date range bar ── */
+    .filter-bar {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .filter-bar label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .filter-bar input[type=date] {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius);
+      padding: 7px 10px; font-size: 13px;
+    }
+    .filter-bar input[type=date]:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    .quick-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .qbtn {
+      padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+      cursor: pointer; transition: all .15s;
+    }
+    .qbtn:hover, .qbtn.active { background: var(--accent); border-color: var(--accent); color: #0d1117; }
+    .filter-sep { width: 1px; height: 24px; background: var(--border); }
+
+    /* ── Stat cards ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+    @media (max-width:1100px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      border-top: 3px solid transparent;
+    }
+    .stat-card.green  { border-top-color: var(--green); }
+    .stat-card.red    { border-top-color: var(--red); }
+    .stat-card.blue   { border-top-color: var(--accent); }
+    .stat-card.purple { border-top-color: var(--purple); }
+    .stat-icon {
+      width: 40px; height: 40px; border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 12px;
+    }
+    .stat-icon.green  { background: rgba(63,185,80,.15);  color: var(--green); }
+    .stat-icon.red    { background: rgba(248,81,73,.15);   color: var(--red); }
+    .stat-icon.blue   { background: rgba(88,166,255,.15);  color: var(--accent); }
+    .stat-icon.purple { background: rgba(188,140,255,.15); color: var(--purple); }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+    .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -.5px; }
+    .stat-change { font-size: 11px; margin-top: 4px; }
+    .stat-change.up   { color: var(--green); }
+    .stat-change.down { color: var(--red); }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin-bottom: 24px;
+    }
+    .card-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-header h2 { font-size: 16px; font-weight: 600; }
+    .card-body { padding: 20px; }
+
+    /* ── Charts grid ── */
+    .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px; }
+    @media (max-width:900px) { .charts-grid { grid-template-columns: 1fr; } }
+    .chart-container { position: relative; height: 280px; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      padding: 10px 16px; text-align: left; color: var(--muted);
+      font-weight: 500; font-size: 11px; text-transform: uppercase;
+      letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    tbody td { padding: 12px 16px; vertical-align: middle; }
+    .amount-positive { color: var(--green); font-weight: 600; }
+    .amount-negative { color: var(--red); font-weight: 600; }
+
+    /* ── Badge ── */
+    .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-revenue { background: rgba(63,185,80,.15); color: var(--green); }
+    .badge-expense { background: rgba(248,81,73,.15); color: var(--red); }
+
+    /* ── Convenio table ── */
+    .convenio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width:900px) { .convenio-grid { grid-template-columns: 1fr; } }
+    .mini-chart { height: 220px; position: relative; }
+
+    /* ── Category section ── */
+    .cat-chart { height: 240px; position: relative; }
+
+    /* ── Toast ── */
+    #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 16px;
+      font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      animation: slideIn .25s ease; display: flex; align-items: center; gap: 10px;
+    }
+    @keyframes slideIn { from { opacity:0; transform: translateX(24px); } to { opacity:1; transform: none; } }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.info    { border-left: 3px solid var(--accent); }
+    .toast.error   { border-left: 3px solid var(--red); }
+
+    /* ── Totals row ── */
+    tfoot td { padding: 10px 16px; font-weight: 700; border-top: 2px solid var(--border); }
+
+    .export-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .sep { width: 1px; background: var(--border); margin: 0 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">L</div>
+    <span>LabSystem</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Principal</div>
+    <a href="dashboard.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="exams.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-3-3v6M7 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-2M9 3h6v2H9V3z"/></svg>
+      Exames
+    </a>
+    <a href="patients.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Pacientes
+    </a>
+    <a href="queue.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Fila
+    </a>
+    <div class="nav-section">Administração</div>
+    <a href="users.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Usuários
+    </a>
+    <a href="financial.html" class="nav-link active">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+      Financeiro
+    </a>
+    <a href="settings.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Configurações
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar-sm" id="sidebar-avatar">AD</div>
+      <div class="user-chip-info">
+        <div class="user-chip-name" id="sidebar-name">Administrador</div>
+        <div class="user-chip-role" id="sidebar-role">admin</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main class="main">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1>Relatórios Financeiros</h1>
+      <p>Análise de receitas, despesas e desempenho por convênio</p>
+    </div>
+    <div class="export-row">
+      <button class="btn btn-secondary btn-sm" onclick="exportCSV()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Excel / CSV
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="window.print()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir / PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Date Range Filter Bar -->
+  <div class="filter-bar">
+    <div>
+      <label>De</label><br/>
+      <input type="date" id="date-from" onchange="applyFilter()" />
+    </div>
+    <div>
+      <label>Até</label><br/>
+      <input type="date" id="date-to" onchange="applyFilter()" />
+    </div>
+    <div class="filter-sep"></div>
+    <div>
+      <label style="display:block;margin-bottom:4px;">Período rápido</label>
+      <div class="quick-filters">
+        <button class="qbtn" onclick="setQuick('today')">Hoje</button>
+        <button class="qbtn" onclick="setQuick('week')">Semana</button>
+        <button class="qbtn active" id="qbtn-month" onclick="setQuick('month')">Mês</button>
+        <button class="qbtn" onclick="setQuick('year')">Ano</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="applyFilter()" style="align-self:flex-end;">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Aplicar
+    </button>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card green">
+      <div class="stat-icon green">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+      </div>
+      <div class="stat-label">Receita Total</div>
+      <div class="stat-value" id="stat-revenue">R$ 0</div>
+      <div class="stat-change up" id="stat-revenue-change">↑ 12% vs mês anterior</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-icon red">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22V12M17 19l-5-5-5 5"/><path d="M12 2v4"/></svg>
+      </div>
+      <div class="stat-label">Despesas</div>
+      <div class="stat-value" id="stat-expenses">R$ 0</div>
+      <div class="stat-change down" id="stat-exp-change">↑ 5% vs mês anterior</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon blue">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      </div>
+      <div class="stat-label">Lucro Líquido</div>
+      <div class="stat-value" id="stat-profit">R$ 0</div>
+      <div class="stat-change up" id="stat-profit-change">↑ 18% vs mês anterior</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-icon purple">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-3-3v6M7 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-2M9 3h6v2H9V3z"/></svg>
+      </div>
+      <div class="stat-label">Exames Faturados</div>
+      <div class="stat-value" id="stat-exams">0</div>
+      <div class="stat-change up" id="stat-exams-change">↑ 8% vs mês anterior</div>
+    </div>
+  </div>
+
+  <!-- Revenue Chart + Doughnut -->
+  <div class="charts-grid">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-header">
+        <h2>Receita ao Longo do Tempo</h2>
+        <span style="font-size:12px;color:var(--muted);" id="chart-period-label">Setembro 2026</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="chart-revenue"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-header">
+        <h2>Por Convênio</h2>
+      </div>
+      <div class="card-body">
+        <div class="mini-chart">
+          <canvas id="chart-convenio-doughnut"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transactions Table -->
+  <div class="card" style="margin-top:24px;">
+    <div class="card-header">
+      <h2>Movimentações Financeiras</h2>
+      <div style="display:flex;gap:8px;">
+        <select id="filter-type" onchange="filterTransactions()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:6px 10px;font-size:13px;">
+          <option value="">Todos</option>
+          <option value="revenue">Receitas</option>
+          <option value="expense">Despesas</option>
+        </select>
+        <select id="filter-cat" onchange="filterTransactions()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:6px 10px;font-size:13px;">
+          <option value="">Todas categorias</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Categoria</th>
+            <th>Descrição</th>
+            <th>Paciente</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody id="transactions-tbody"></tbody>
+        <tfoot id="transactions-foot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Convenio breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Faturamento por Convênio</h2>
+    </div>
+    <div class="convenio-grid" style="padding:20px;gap:24px;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Convênio</th>
+              <th>Qtd. Exames</th>
+              <th>Total (R$)</th>
+              <th>%</th>
+            </tr>
+          </thead>
+          <tbody id="convenio-tbody"></tbody>
+        </table>
+      </div>
+      <div>
+        <!-- doughnut already rendered above, show legend here -->
+        <div id="convenio-legend" style="display:flex;flex-direction:column;gap:8px;padding-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Bar Chart -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Receita por Categoria de Exame</h2>
+    </div>
+    <div class="card-body">
+      <div class="cat-chart">
+        <canvas id="chart-category"></canvas>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast-container"></div>
+
+<!-- ══════════════ SCRIPT ══════════════ -->
+<script>
+/* ── Auth ── */
+(function checkAuth(){
+  try {
+    const s = JSON.parse(localStorage.getItem('labsystem_session')||'null');
+    if (!s || s.role !== 'admin') {
+      alert('Acesso restrito: apenas administradores.');
+      window.location.href = 'index.html';
+    } else {
+      document.getElementById('sidebar-name').textContent = s.name||'Administrador';
+      document.getElementById('sidebar-role').textContent = s.role||'admin';
+      document.getElementById('sidebar-avatar').textContent = initials(s.name||'AD');
+    }
+  } catch(e){ /* dev mode */ }
+})();
+
+/* ── Mock Data ── */
+const TRANSACTIONS_RAW = [
+  {id:1,  date:'2026-09-01', type:'revenue', cat:'Hematologia',    desc:'Hemograma Completo',          patient:'Roberto Souza',    amount:85.00},
+  {id:2,  date:'2026-09-01', type:'revenue', cat:'Bioquímica',     desc:'Glicose em Jejum',             patient:'Ana Lima',         amount:45.00},
+  {id:3,  date:'2026-09-02', type:'expense', cat:'Insumos',        desc:'Reagentes de laboratório',     patient:'—',                amount:-1200.00},
+  {id:4,  date:'2026-09-02', type:'revenue', cat:'Coagulação',     desc:'Coagulograma',                 patient:'Marcos Pereira',   amount:130.00},
+  {id:5,  date:'2026-09-03', type:'revenue', cat:'Hematologia',    desc:'Hemograma + Plaquetas',        patient:'Fernanda Rocha',   amount:110.00},
+  {id:6,  date:'2026-09-03', type:'expense', cat:'Folha de pagto', desc:'Salários – setembro',          patient:'—',                amount:-8500.00},
+  {id:7,  date:'2026-09-04', type:'revenue', cat:'Microbiologia',  desc:'Urocultura',                   patient:'Joana Alves',      amount:95.00},
+  {id:8,  date:'2026-09-04', type:'revenue', cat:'Bioquímica',     desc:'Perfil Lipídico',              patient:'Carlos Mendes',    amount:180.00},
+  {id:9,  date:'2026-09-05', type:'expense', cat:'Manutenção',     desc:'Calibração analisador XL-200', patient:'—',                amount:-350.00},
+  {id:10, date:'2026-09-05', type:'revenue', cat:'Imunologia',     desc:'TSH + T4 Livre',               patient:'Rita Moura',       amount:210.00},
+  {id:11, date:'2026-09-06', type:'revenue', cat:'Hematologia',    desc:'Eritrograma',                  patient:'Paulo Gomes',      amount:75.00},
+  {id:12, date:'2026-09-07', type:'revenue', cat:'Bioquímica',     desc:'Função Renal (Creatinina+Ureia)',patient:'Beatriz Faria',  amount:140.00},
+  {id:13, date:'2026-09-08', type:'expense', cat:'Aluguel',        desc:'Aluguel – setembro',           patient:'—',                amount:-2800.00},
+  {id:14, date:'2026-09-08', type:'revenue', cat:'Imunologia',     desc:'Sorologias Hepatite B/C',      patient:'Henrique Duarte',  amount:280.00},
+  {id:15, date:'2026-09-09', type:'revenue', cat:'Coagulação',     desc:'Tempo de Protrombina',         patient:'Sandra Teixeira',  amount:98.00},
+  {id:16, date:'2026-09-09', type:'revenue', cat:'Microbiologia',  desc:'Antibiograma',                 patient:'Lucas Barros',     amount:155.00},
+  {id:17, date:'2026-09-09', type:'expense', cat:'Insumos',        desc:'Luvas e EPI descartáveis',     patient:'—',                amount:-280.00},
+];
+
+const CONVENIOS = [
+  { name:'Particular', exams:62,  total:8540.00 },
+  { name:'Unimed',     exams:45,  total:6120.00 },
+  { name:'Bradesco',   exams:28,  total:3850.00 },
+  { name:'Hapvida',    exams:21,  total:2940.00 },
+  { name:'SulAmérica', exams:14,  total:1820.00 },
+  { name:'SUS',        exams:30,  total:1500.00 },
+];
+
+const PALETTE = ['#58a6ff','#3fb950','#d29922','#bc8cff','#f85149','#79c0ff'];
+
+let allTransactions = [...TRANSACTIONS_RAW];
+let filteredTransactions = [...allTransactions];
+
+/* ── Helpers ── */
+function initials(n){ return n.trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join(''); }
+function fmtMoney(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v); }
+function fmtDate(d){ const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y}`; }
+function toast(msg,type='info'){
+  const tc=document.getElementById('toast-container');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<span>${msg}</span>`;
+  tc.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+
+/* ── Quick filters ── */
+function setQuick(period){
+  const now = new Date();
+  let from, to = now.toISOString().slice(0,10);
+  document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('active'));
+  if(period==='today')  { from=to; }
+  if(period==='week')   { const d=new Date(now); d.setDate(d.getDate()-6); from=d.toISOString().slice(0,10); }
+  if(period==='month')  { from=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`; }
+  if(period==='year')   { from=`${now.getFullYear()}-01-01`; }
+  document.getElementById('date-from').value = from;
+  document.getElementById('date-to').value   = to;
+  event.target.classList.add('active');
+  applyFilter();
+}
+
+/* ── Apply filter ── */
+function applyFilter(){
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  filteredTransactions = allTransactions.filter(t =>
+    (!from || t.date >= from) && (!to || t.date <= to)
+  );
+  renderAll();
+}
+
+function filterTransactions(){
+  const type = document.getElementById('filter-type').value;
+  const cat  = document.getElementById('filter-cat').value;
+  const base = allTransactions.filter(t=>(!type||t.type===type)&&(!cat||t.cat===cat));
+  renderTransactions(base);
+}
+
+/* ── Render all ── */
+function renderAll(){
+  renderStats();
+  renderTransactions(filteredTransactions);
+  renderRevenueChart();
+  renderConvenio();
+  renderCategoryChart();
+  populateCatFilter();
+}
+
+/* ── Stats ── */
+function renderStats(){
+  const revenue  = filteredTransactions.filter(t=>t.type==='revenue').reduce((a,t)=>a+t.amount,0);
+  const expenses = filteredTransactions.filter(t=>t.type==='expense').reduce((a,t)=>a+Math.abs(t.amount),0);
+  const profit   = revenue - expenses;
+  const exams    = filteredTransactions.filter(t=>t.type==='revenue').length;
+  document.getElementById('stat-revenue').textContent  = fmtMoney(revenue);
+  document.getElementById('stat-expenses').textContent = fmtMoney(expenses);
+  document.getElementById('stat-profit').textContent   = fmtMoney(profit);
+  document.getElementById('stat-exams').textContent    = exams;
+}
+
+/* ── Transactions table ── */
+function renderTransactions(list){
+  const tbody = document.getElementById('transactions-tbody');
+  const tfoot = document.getElementById('transactions-foot');
+  if(!list.length){ tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted);">Nenhuma movimentação no período</td></tr>`; tfoot.innerHTML=''; return; }
+  tbody.innerHTML = list.map(t=>`
+    <tr>
+      <td style="font-size:12px;white-space:nowrap;">${fmtDate(t.date)}</td>
+      <td><span class="badge ${t.type==='revenue'?'badge-revenue':'badge-expense'}">${t.type==='revenue'?'Receita':'Despesa'}</span></td>
+      <td style="font-size:12px;">${t.cat}</td>
+      <td style="font-size:13px;">${t.desc}</td>
+      <td style="font-size:12px;color:var(--muted);">${t.patient}</td>
+      <td class="${t.amount>=0?'amount-positive':'amount-negative'}">${fmtMoney(t.amount)}</td>
+    </tr>`).join('');
+  const total = list.reduce((a,t)=>a+t.amount,0);
+  tfoot.innerHTML=`<tr><td colspan="5" style="padding:10px 16px;font-weight:600;border-top:2px solid var(--border);font-size:12px;color:var(--muted);">TOTAL DO PERÍODO</td>
+    <td style="padding:10px 16px;font-weight:700;border-top:2px solid var(--border);" class="${total>=0?'amount-positive':'amount-negative'}">${fmtMoney(total)}</td></tr>`;
+}
+
+/* ── Category filter ── */
+function populateCatFilter(){
+  const cats = [...new Set(allTransactions.map(t=>t.cat))].sort();
+  const sel = document.getElementById('filter-cat');
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">Todas categorias</option>` + cats.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+}
+
+/* ── Revenue Chart (Line) ── */
+let chartRevenue = null;
+function renderRevenueChart(){
+  const ctx = document.getElementById('chart-revenue').getContext('2d');
+  // Group revenue by date
+  const map = {};
+  filteredTransactions.filter(t=>t.type==='revenue').forEach(t=>{
+    map[t.date] = (map[t.date]||0) + t.amount;
+  });
+  const labels = Object.keys(map).sort();
+  const data   = labels.map(d=>map[d]);
+
+  if(chartRevenue) chartRevenue.destroy();
+  chartRevenue = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels: labels.map(d=>{ const [y,m,dd]=d.split('-'); return `${dd}/${m}`; }),
+      datasets:[{
+        label:'Receita (R$)',
+        data,
+        borderColor:'#3fb950',
+        backgroundColor:'rgba(63,185,80,.08)',
+        fill:true,
+        tension:.4,
+        pointBackgroundColor:'#3fb950',
+        pointRadius:4,
+        pointHoverRadius:6,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{
+        backgroundColor:'#21262d', borderColor:'#30363d', borderWidth:1,
+        titleColor:'#e6edf3', bodyColor:'#8b949e',
+        callbacks:{ label: ctx=>' '+fmtMoney(ctx.raw) }
+      }},
+      scales:{
+        x:{ grid:{color:'#21262d'}, ticks:{color:'#8b949e',font:{size:11}} },
+        y:{ grid:{color:'#21262d'}, ticks:{color:'#8b949e',font:{size:11}, callback:v=>'R$ '+v.toLocaleString('pt-BR')} }
+      }
+    }
+  });
+}
+
+/* ── Convenio Doughnut ── */
+let chartDoughnut = null;
+function renderConvenio(){
+  // Table
+  const total = CONVENIOS.reduce((a,c)=>a+c.total,0);
+  document.getElementById('convenio-tbody').innerHTML = CONVENIOS.map((c,i)=>`
+    <tr>
+      <td style="display:flex;align-items:center;gap:8px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${PALETTE[i%PALETTE.length]};display:inline-block;"></span>
+        ${c.name}
+      </td>
+      <td style="font-size:12px;">${c.exams}</td>
+      <td style="font-weight:600;">${fmtMoney(c.total)}</td>
+      <td style="font-size:12px;color:var(--muted);">${((c.total/total)*100).toFixed(1)}%</td>
+    </tr>`).join('');
+
+  // Legend
+  document.getElementById('convenio-legend').innerHTML = CONVENIOS.map((c,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;">
+      <span style="display:flex;align-items:center;gap:6px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${PALETTE[i%PALETTE.length]};flex-shrink:0;display:inline-block;"></span>
+        ${c.name}
+      </span>
+      <span style="color:var(--muted);">${((c.total/total)*100).toFixed(1)}%</span>
+    </div>`).join('');
+
+  // Chart
+  const ctx2 = document.getElementById('chart-convenio-doughnut').getContext('2d');
+  if(chartDoughnut) chartDoughnut.destroy();
+  chartDoughnut = new Chart(ctx2,{
+    type:'doughnut',
+    data:{
+      labels: CONVENIOS.map(c=>c.name),
+      datasets:[{ data: CONVENIOS.map(c=>c.total), backgroundColor:PALETTE, borderColor:'#161b22', borderWidth:2, hoverOffset:6 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      cutout:'65%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#21262d', borderColor:'#30363d', borderWidth:1,
+          titleColor:'#e6edf3', bodyColor:'#8b949e',
+          callbacks:{ label: ctx=>` ${fmtMoney(ctx.raw)}` }
+        }
+      }
+    }
+  });
+}
+
+/* ── Category Bar ── */
+let chartCategory = null;
+function renderCategoryChart(){
+  const map = {};
+  filteredTransactions.filter(t=>t.type==='revenue').forEach(t=>{
+    map[t.cat] = (map[t.cat]||0) + t.amount;
+  });
+  const sorted = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const ctx3 = document.getElementById('chart-category').getContext('2d');
+  if(chartCategory) chartCategory.destroy();
+  chartCategory = new Chart(ctx3,{
+    type:'bar',
+    data:{
+      labels: sorted.map(s=>s[0]),
+      datasets:[{ label:'Receita (R$)', data: sorted.map(s=>s[1]),
+        backgroundColor: sorted.map((_,i)=>PALETTE[i%PALETTE.length]),
+        borderRadius:4, borderSkipped:false }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#21262d', borderColor:'#30363d', borderWidth:1,
+          titleColor:'#e6edf3', bodyColor:'#8b949e',
+          callbacks:{ label: ctx=>' '+fmtMoney(ctx.raw) }
+        }
+      },
+      scales:{
+        x:{ grid:{color:'#21262d'}, ticks:{color:'#8b949e',font:{size:11}, callback:v=>'R$'+v} },
+        y:{ grid:{color:'rgba(0,0,0,0)'}, ticks:{color:'#8b949e',font:{size:11}} }
+      }
+    }
+  });
+}
+
+/* ── Export CSV ── */
+function exportCSV(){
+  const rows=[['Data','Tipo','Categoria','Descrição','Paciente','Valor']];
+  filteredTransactions.forEach(t=>rows.push([fmtDate(t.date),t.type==='revenue'?'Receita':'Despesa',t.cat,t.desc,t.patient,t.amount.toFixed(2)]));
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`financeiro_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('CSV exportado com sucesso!','success');
+}
+
+/* ── Init ── */
+(function init(){
+  const now = new Date();
+  document.getElementById('date-from').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+  document.getElementById('date-to').value   = now.toISOString().slice(0,10);
+  document.getElementById('chart-period-label').textContent =
+    now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  applyFilter();
+})();
+</script>
+</body>
+</html>

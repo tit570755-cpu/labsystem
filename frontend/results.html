@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lançamento de Resultados – LabSystem</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Modal ─────────────────────────────────────────────── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem;}
+    .modal-overlay.open{display:flex;}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:1rem;width:100%;max-width:860px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(0,0,0,.5);}
+    .modal-xl{max-width:980px;}
+    .modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+    .modal-header h2{font-size:1.05rem;font-weight:600;color:var(--text);}
+    .modal-body{padding:1.5rem;overflow-y:auto;flex:1;}
+    .modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:.75rem;flex-shrink:0;}
+    .btn-close-modal{background:none;border:none;color:var(--text-muted);font-size:1.4rem;cursor:pointer;line-height:1;transition:color .2s;}
+    .btn-close-modal:hover{color:var(--text);}
+
+    /* ── Filter bar ─────────────────────────────────────────── */
+    .filter-bar{display:flex;gap:.75rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;}
+    .filter-bar select,.filter-bar input{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:.5rem;padding:.5rem .8rem;font-size:.85rem;outline:none;}
+    .filter-bar select:focus,.filter-bar input:focus{border-color:var(--accent);}
+
+    /* ── Badge ──────────────────────────────────────────────── */
+    .badge{display:inline-flex;align-items:center;gap:.3rem;padding:.22rem .65rem;border-radius:1rem;font-size:.75rem;font-weight:600;white-space:nowrap;}
+    .badge-urgente{background:rgba(246,173,85,.15);color:#f6ad55;}
+    .badge-emergencia{background:rgba(252,129,129,.15);color:#fc8181;}
+    .badge-normal{background:rgba(99,179,237,.15);color:#63b3ed;}
+
+    /* ── Patient info strip ─────────────────────────────────── */
+    .patient-strip{display:flex;align-items:center;gap:1rem;background:var(--surface-2);border:1px solid var(--border);border-radius:.75rem;padding:.85rem 1rem;margin-bottom:1.5rem;}
+    .patient-avatar-lg{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#fff;flex-shrink:0;}
+    .pstrip-body h3{font-size:.95rem;font-weight:600;color:var(--text);}
+    .pstrip-body p{font-size:.78rem;color:var(--text-muted);margin-top:.15rem;}
+    .pstrip-meta{margin-left:auto;text-align:right;}
+    .pstrip-meta .os-num{font-family:monospace;font-size:.82rem;color:var(--accent);font-weight:600;}
+    .pstrip-meta p{font-size:.78rem;color:var(--text-muted);margin-top:.2rem;}
+
+    /* ── Exam section ───────────────────────────────────────── */
+    .exam-section{background:var(--bg);border:1px solid var(--border);border-radius:.75rem;margin-bottom:1.25rem;overflow:hidden;}
+    .exam-section-header{padding:.85rem 1rem;background:var(--surface-2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+    .exam-section-header h3{font-size:.9rem;font-weight:600;color:var(--text);}
+    .exam-section-header .method{font-size:.75rem;color:var(--text-muted);}
+    .exam-section-body{padding:1rem;}
+
+    /* ── Parameter row ──────────────────────────────────────── */
+    .param-table{width:100%;border-collapse:collapse;}
+    .param-table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--border);}
+    .param-table td{padding:.5rem .6rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+    .param-table tr:last-child td{border-bottom:none;}
+    .param-name{font-size:.85rem;color:var(--text);font-weight:500;}
+    .param-unit{font-size:.78rem;color:var(--text-muted);}
+    .param-ref{font-size:.75rem;color:var(--text-muted);}
+
+    /* ── Result input ───────────────────────────────────────── */
+    .result-input-wrap{position:relative;display:inline-flex;align-items:center;}
+    .result-input{background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:.45rem;padding:.4rem .6rem;font-size:.88rem;width:110px;outline:none;transition:border-color .2s;}
+    .result-input:focus{border-color:var(--accent);}
+    .result-input.result-normal{border-color:var(--success);background:rgba(72,187,120,.06);}
+    .result-input.result-high{border-color:#fc8181;background:rgba(252,129,129,.08);}
+    .result-input.result-low{border-color:#63b3ed;background:rgba(99,179,237,.08);}
+    .result-indicator{margin-left:.45rem;font-size:.85rem;font-weight:700;width:20px;}
+    .result-indicator.normal{color:var(--success);}
+    .result-indicator.high{color:#fc8181;}
+    .result-indicator.low{color:#63b3ed);}
+
+    /* ── Critical alert ─────────────────────────────────────── */
+    .critical-alert{display:none;background:rgba(252,129,129,.12);border:1px solid rgba(252,129,129,.4);border-radius:.5rem;padding:.5rem .75rem;margin-top:.4rem;font-size:.78rem;color:#fc8181;font-weight:500;}
+    .critical-alert.visible{display:block;}
+
+    /* ── Obs textarea ───────────────────────────────────────── */
+    .obs-area{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:.5rem;padding:.5rem .75rem;font-size:.82rem;resize:vertical;min-height:60px;margin-top:.75rem;outline:none;}
+    .obs-area:focus{border-color:var(--accent);}
+    .obs-label{font-size:.75rem;color:var(--text-muted);margin-bottom:.3rem;display:block;}
+
+    /* ── Status pill (table) ────────────────────────────────── */
+    .status-pill{display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;font-weight:600;padding:.25rem .65rem;border-radius:1rem;}
+
+    /* Section title */
+    .section-title{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:1.25rem 0 .65rem;}
+
+    /* Toast */
+    #toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--success);color:#fff;padding:.75rem 1.25rem;border-radius:.65rem;font-size:.85rem;font-weight:500;display:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.35);}
+  </style>
+</head>
+<body>
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+    </div>
+    <span class="logo-text">LabSystem</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <a href="patients.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Pacientes</span>
+    </a>
+    <a href="requests.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <span>Requisições</span>
+    </a>
+    <a href="results.html" class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>Resultados</span>
+    </a>
+    <a href="reports.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>
+      <span>Laudos</span>
+    </a>
+    <a href="exams.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <span>Exames</span>
+    </a>
+    <a href="settings.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+      <span>Configurações</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-mini">
+      <div class="user-avatar-sm">B</div>
+      <div class="user-meta">
+        <span class="user-name-sm">Biomédico</span>
+        <span class="user-role-sm">Analista</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main class="main-content">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Lançamento de Resultados</h1>
+      <p class="page-subtitle">Requisições prontas para análise e lançamento de resultados</p>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <select id="filter-status" onchange="applyFilters()">
+      <option value="">Coletado + Em Análise</option>
+      <option value="coletado">Coletado</option>
+      <option value="em_analise">Em Análise</option>
+    </select>
+    <input type="text" placeholder="Buscar paciente ou OS…" id="filter-search" oninput="applyFilters()" style="min-width:220px;" />
+    <select id="filter-priority" onchange="applyFilters()">
+      <option value="">Todas as prioridades</option>
+      <option value="normal">Normal</option>
+      <option value="urgente">Urgente</option>
+      <option value="emergencia">Emergência</option>
+    </select>
+    <span id="filter-count" style="font-size:.82rem;color:var(--text-muted);margin-left:auto;"></span>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Aguardando Resultado</h2>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table" id="results-table">
+        <thead>
+          <tr>
+            <th>OS</th>
+            <th>Paciente</th>
+            <th>Exames</th>
+            <th>Solicitante</th>
+            <th>Prioridade</th>
+            <th>Status</th>
+            <th>Entrada</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="results-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- ════════════════════════════════════════
+     MODAL: LANÇAR RESULTADOS
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-results">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <div>
+        <h2 id="modal-results-title">Lançamento de Resultados</h2>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-top:.15rem;" id="modal-results-subtitle">–</p>
+      </div>
+      <button class="btn-close-modal" onclick="closeModal('modal-results')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Patient info strip -->
+      <div class="patient-strip">
+        <div class="patient-avatar-lg" id="res-avatar">P</div>
+        <div class="pstrip-body">
+          <h3 id="res-patient-name">–</h3>
+          <p id="res-patient-meta">–</p>
+        </div>
+        <div class="pstrip-meta">
+          <div class="os-num" id="res-os">–</div>
+          <p id="res-doctor">–</p>
+          <div id="res-priority" style="margin-top:.3rem;"></div>
+        </div>
+      </div>
+
+      <!-- Exam blocks generated dynamically -->
+      <div id="exam-blocks"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-results')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="saveDraft()" style="border-color:var(--border);">
+        💾 Salvar Rascunho
+      </button>
+      <button class="btn btn-primary" onclick="generateReport()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Gerar Laudo
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="api.js"></script>
+<script>
+/* ══════════════════════════════════════
+   MOCK DATA
+══════════════════════════════════════ */
+const MOCK_PATIENTS = [
+  {id:1,name:'Ana Clara Ferreira',dob:'1990-04-15',gender:'Feminino',cpf:'123.456.789-00'},
+  {id:2,name:'Bruno Souza Oliveira',dob:'1978-09-22',gender:'Masculino',cpf:'987.654.321-00'},
+  {id:3,name:'Carla Mendes Lima',dob:'2001-12-03',gender:'Feminino',cpf:'456.789.123-00'},
+  {id:4,name:'Davi Henrique Santos',dob:'1965-06-11',gender:'Masculino',cpf:'321.654.987-00'},
+];
+const MOCK_DOCTORS = [
+  {id:1,name:'Dr. Paulo Salave\'ea'},{id:2,name:'Dra. Marina Costa'},{id:3,name:'Dr. Ricardo Alves'},
+];
+
+// Exams with parameters and reference values
+const MOCK_EXAMS = {
+  1:{id:1,name:'Hemograma Completo',code:'HEM001',material:'Sangue Total',method:'Coulter automatizado',params:[
+    {id:'hgb',name:'Hemoglobina',unit:'g/dL',refLow:12.0,refHigh:16.0,critLow:7.0,critHigh:20.0,refText:'12,0 – 16,0'},
+    {id:'ht',name:'Hematócrito',unit:'%',refLow:36,refHigh:48,critLow:20,critHigh:60,refText:'36 – 48'},
+    {id:'leuco',name:'Leucócitos',unit:'mil/mm³',refLow:4.5,refHigh:11.0,critLow:2.0,critHigh:30.0,refText:'4,5 – 11,0'},
+    {id:'plaq',name:'Plaquetas',unit:'mil/mm³',refLow:150,refHigh:400,critLow:50,critHigh:1000,refText:'150 – 400'},
+    {id:'hem',name:'Hemácias',unit:'milhões/mm³',refLow:3.9,refHigh:5.5,critLow:2.0,critHigh:8.0,refText:'3,9 – 5,5'},
+  ]},
+  2:{id:2,name:'Glicemia em Jejum',code:'GLI001',material:'Soro',method:'Hexoquinase enzimático',params:[
+    {id:'gli',name:'Glicose',unit:'mg/dL',refLow:70,refHigh:99,critLow:40,critHigh:500,refText:'70 – 99 (jejum)'},
+  ]},
+  3:{id:3,name:'TSH',code:'TSH001',material:'Soro',method:'Eletroquimioluminescência',params:[
+    {id:'tsh',name:'TSH',unit:'mUI/L',refLow:0.4,refHigh:4.0,critLow:0.01,critHigh:100,refText:'0,40 – 4,00'},
+  ]},
+  4:{id:4,name:'T4 Livre',code:'T4L001',material:'Soro',method:'Eletroquimioluminescência',params:[
+    {id:'t4l',name:'T4 Livre',unit:'ng/dL',refLow:0.8,refHigh:1.9,critLow:0.1,critHigh:8,refText:'0,80 – 1,90'},
+  ]},
+  5:{id:5,name:'PCR Ultrassensível',code:'PCR001',material:'Soro',method:'Imunoturbidimetria',params:[
+    {id:'pcr',name:'Proteína C Reativa (PCR-us)',unit:'mg/L',refLow:0,refHigh:3.0,critLow:0,critHigh:200,refText:'< 3,0'},
+  ]},
+  6:{id:6,name:'Urina Tipo I (EAS)',code:'EAS001',material:'Urina',method:'Dipstick + microscopia',params:[
+    {id:'ph',name:'pH',unit:'',refLow:5.0,refHigh:8.0,critLow:4.0,critHigh:9.0,refText:'5,0 – 8,0'},
+    {id:'den',name:'Densidade',unit:'',refLow:1005,refHigh:1030,critLow:1000,critHigh:1040,refText:'1005 – 1030'},
+    {id:'prot',name:'Proteínas',unit:'mg/dL',refLow:0,refHigh:15,critLow:0,critHigh:500,refText:'< 15'},
+  ]},
+  7:{id:7,name:'Coagulograma',code:'COA001',material:'Plasma',method:'Coagulométrico',params:[
+    {id:'tp',name:'TP (Tempo de Protrombina)',unit:'seg',refLow:11,refHigh:14,critLow:5,critHigh:60,refText:'11 – 14'},
+    {id:'inr',name:'INR',unit:'',refLow:0.8,refHigh:1.2,critLow:0.5,critHigh:5.0,refText:'0,80 – 1,20'},
+    {id:'ttpa',name:'TTPA (seg)',unit:'seg',refLow:25,refHigh:35,critLow:10,critHigh:120,refText:'25 – 35'},
+  ]},
+};
+
+const REQUESTS = [
+  {id:2,os:'OS-2024-0002',patientId:2,doctorId:2,convenio:'Particular',priority:'urgente',status:'em_analise',examIds:[1,7],notes:'Paciente em pré-operatório',createdAt:'2024-01-16T10:15:00'},
+  {id:3,os:'OS-2024-0003',patientId:3,doctorId:1,convenio:'Bradesco Saúde',priority:'emergencia',status:'coletado',examIds:[1,5,6],notes:'Suspeita de ITU',createdAt:'2024-01-16T14:00:00'},
+];
+
+const STATUS_LABELS={pendente:'Pendente',coletado:'Coletado',em_analise:'Em Análise',liberado:'Liberado'};
+
+let currentRequestId = null;
+let enteredValues = {}; // examId -> paramId -> value
+
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+function getP(id){ return MOCK_PATIENTS.find(x=>x.id===id)||{}; }
+function getD(id){ return MOCK_DOCTORS.find(x=>x.id===id)||{}; }
+function calcAge(dob){ const b=new Date(dob),n=new Date(); let a=n.getFullYear()-b.getFullYear(); if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate())) a--; return a; }
+function fmtDate(iso){ if(!iso) return '–'; const d=new Date(iso); return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+function priorityBadge(p){
+  const map={normal:['badge-normal','●','Normal'],urgente:['badge-urgente','▲','Urgente'],emergencia:['badge-emergencia','‼','Emergência']};
+  const [cls,icon,label]=map[p]||['badge-normal','●','Normal'];
+  return `<span class="badge ${cls}">${icon} ${label}</span>`;
+}
+function statusBadge(s){
+  const map={coletado:{bg:'rgba(99,179,237,.15)',c:'#63b3ed'},em_analise:{bg:'rgba(183,148,244,.15)',c:'#b794f4'}};
+  const st=map[s]||{bg:'rgba(160,174,192,.1)',c:'#a0aec0'};
+  return `<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;font-weight:600;color:${st.c};padding:.25rem .65rem;background:${st.bg};border-radius:1rem;"><span style="width:7px;height:7px;border-radius:50%;background:${st.c};display:inline-block;"></span>${STATUS_LABELS[s]||s}</span>`;
+}
+function showToast(msg,color='var(--success)'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.cssText=`position:fixed;bottom:1.5rem;right:1.5rem;background:${color};color:#fff;padding:.75rem 1.25rem;border-radius:.65rem;font-size:.85rem;font-weight:500;display:block;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.35);`;
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+/* ══════════════════════════════════════
+   RENDER TABLE
+══════════════════════════════════════ */
+function applyFilters(){
+  const statusF=document.getElementById('filter-status').value;
+  const searchF=document.getElementById('filter-search').value.toLowerCase();
+  const prioF=document.getElementById('filter-priority').value;
+
+  let data=REQUESTS.filter(r=>r.status==='coletado'||r.status==='em_analise');
+  if(statusF) data=data.filter(r=>r.status===statusF);
+  if(prioF) data=data.filter(r=>r.priority===prioF);
+  if(searchF) data=data.filter(r=>{
+    const p=getP(r.patientId);
+    return (p.name||'').toLowerCase().includes(searchF)||r.os.toLowerCase().includes(searchF);
+  });
+
+  document.getElementById('filter-count').textContent=data.length+' requisição(ões)';
+  const tbody=document.getElementById('results-tbody');
+
+  if(!data.length){
+    tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">Nenhuma requisição aguardando resultado.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML=data.map(r=>{
+    const p=getP(r.patientId);
+    const d=getD(r.doctorId);
+    const initials=(p.name||'?').split(' ').slice(0,2).map(x=>x[0]).join('');
+    const exNames=r.examIds.map(id=>MOCK_EXAMS[id]?.name||'?');
+    return `<tr>
+      <td><span style="font-family:monospace;font-size:.82rem;color:var(--accent);font-weight:600;">${r.os}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:.65rem;">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:#fff;">${initials}</div>
+          <div><div style="font-size:.85rem;font-weight:500;color:var(--text);">${p.name||'–'}</div><div style="font-size:.72rem;color:var(--text-muted);">${p.cpf||''}</div></div>
+        </div>
+      </td>
+      <td><span style="font-size:.78rem;color:var(--text-muted);">${exNames.join(', ')}</span></td>
+      <td style="font-size:.82rem;color:var(--text-muted);">${d.name||'–'}</td>
+      <td>${priorityBadge(r.priority)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td style="font-size:.78rem;color:var(--text-muted);">${fmtDate(r.createdAt)}</td>
+      <td><button class="btn btn-primary" style="font-size:.78rem;padding:.4rem .85rem;" onclick="openResultModal(${r.id})">⚗ Lançar Resultado</button></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   OPEN RESULT MODAL
+══════════════════════════════════════ */
+function openResultModal(reqId){
+  const r=REQUESTS.find(x=>x.id===reqId); if(!r) return;
+  currentRequestId=reqId;
+  enteredValues={};
+
+  const p=getP(r.patientId);
+  const d=getD(r.doctorId);
+  const initials=(p.name||'?').split(' ').slice(0,2).map(x=>x[0]).join('');
+
+  document.getElementById('modal-results-title').textContent='Lançamento – '+r.os;
+  document.getElementById('modal-results-subtitle').textContent='Biomédico: usuário atual · '+fmtDate(r.createdAt);
+  document.getElementById('res-avatar').textContent=initials;
+  document.getElementById('res-patient-name').textContent=p.name||'–';
+  document.getElementById('res-patient-meta').textContent=(p.cpf||'')+'  ·  '+calcAge(p.dob)+' anos  ·  '+(p.gender||'');
+  document.getElementById('res-os').textContent=r.os;
+  document.getElementById('res-doctor').textContent=d.name||'–';
+  document.getElementById('res-priority').innerHTML=priorityBadge(r.priority);
+
+  // Build exam blocks
+  const blocks=document.getElementById('exam-blocks');
+  blocks.innerHTML=r.examIds.map(eid=>{
+    const e=MOCK_EXAMS[eid]; if(!e) return '';
+    return `
+    <div class="exam-section" id="exam-block-${eid}">
+      <div class="exam-section-header">
+        <div>
+          <h3>${e.name}</h3>
+          <div class="method">${e.code} · Método: ${e.method} · Material: ${e.material}</div>
+        </div>
+      </div>
+      <div class="exam-section-body">
+        <table class="param-table">
+          <thead><tr><th>Parâmetro</th><th>Resultado</th><th>Unidade</th><th>Valor de Referência</th><th>Status</th></tr></thead>
+          <tbody>
+            ${e.params.map(param=>`
+            <tr id="row-${eid}-${param.id}">
+              <td class="param-name">${param.name}</td>
+              <td>
+                <div class="result-input-wrap">
+                  <input type="number" step="any" class="result-input" id="inp-${eid}-${param.id}"
+                    placeholder="–"
+                    oninput="checkValue(${eid},'${param.id}',this)"
+                    data-ref-low="${param.refLow}" data-ref-high="${param.refHigh}"
+                    data-crit-low="${param.critLow}" data-crit-high="${param.critHigh}" />
+                  <span class="result-indicator" id="ind-${eid}-${param.id}"></span>
+                </div>
+                <div class="critical-alert" id="crit-${eid}-${param.id}">⚠ VALOR CRÍTICO – Notificar médico imediatamente!</div>
+              </td>
+              <td class="param-unit">${param.unit}</td>
+              <td class="param-ref">${param.refText}</td>
+              <td id="status-${eid}-${param.id}" style="font-size:.8rem;color:var(--text-muted);">–</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <label class="obs-label" style="margin-top:.85rem;">Observações do Exame</label>
+        <textarea class="obs-area" id="obs-${eid}" placeholder="Observações específicas para este exame…"></textarea>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('modal-results').classList.add('open');
+}
+
+/* ══════════════════════════════════════
+   REAL-TIME VALUE CHECK
+══════════════════════════════════════ */
+function checkValue(eid, paramId, inputEl){
+  const v=parseFloat(inputEl.value);
+  const refLow=parseFloat(inputEl.dataset.refLow);
+  const refHigh=parseFloat(inputEl.dataset.refHigh);
+  const critLow=parseFloat(inputEl.dataset.critLow);
+  const critHigh=parseFloat(inputEl.dataset.critHigh);
+
+  const ind=document.getElementById(`ind-${eid}-${paramId}`);
+  const crit=document.getElementById(`crit-${eid}-${paramId}`);
+  const statusCell=document.getElementById(`status-${eid}-${paramId}`);
+
+  // Store value
+  if(!enteredValues[eid]) enteredValues[eid]={};
+  enteredValues[eid][paramId]=isNaN(v)?null:v;
+
+  // Remove classes
+  inputEl.classList.remove('result-normal','result-high','result-low');
+  ind.className='result-indicator';
+  crit.classList.remove('visible');
+
+  if(isNaN(v) || inputEl.value===''){
+    ind.textContent=''; statusCell.textContent='–'; return;
+  }
+
+  // Critical check first
+  if(v<critLow||v>critHigh){
+    inputEl.classList.add(v>refHigh?'result-high':'result-low');
+    ind.textContent=v>critHigh?'▲▲':'▼▼';
+    ind.style.color='#fc8181';
+    crit.classList.add('visible');
+    statusCell.innerHTML='<span style="color:#fc8181;font-weight:700;">CRÍTICO</span>';
+    return;
+  }
+
+  if(v>=refLow && v<=refHigh){
+    inputEl.classList.add('result-normal');
+    ind.textContent='✓'; ind.classList.add('normal'); ind.style.color='var(--success)';
+    statusCell.innerHTML='<span style="color:var(--success);">Normal</span>';
+  } else if(v>refHigh){
+    inputEl.classList.add('result-high');
+    ind.textContent='H'; ind.classList.add('high'); ind.style.color='#fc8181';
+    statusCell.innerHTML='<span style="color:#fc8181;font-weight:600;">↑ Alto</span>';
+  } else {
+    inputEl.classList.add('result-low');
+    ind.textContent='L'; ind.classList.add('low'); ind.style.color='#63b3ed';
+    statusCell.innerHTML='<span style="color:#63b3ed;font-weight:600;">↓ Baixo</span>';
+  }
+}
+
+/* ══════════════════════════════════════
+   SAVE DRAFT
+══════════════════════════════════════ */
+function saveDraft(){
+  showToast('Rascunho salvo com sucesso!');
+}
+
+/* ══════════════════════════════════════
+   GENERATE REPORT → redirect
+══════════════════════════════════════ */
+function generateReport(){
+  const r=REQUESTS.find(x=>x.id===currentRequestId); if(!r) return;
+
+  // Validate – at least one value entered per exam
+  let anyValue=false;
+  for(const eid in enteredValues){
+    const params=enteredValues[eid];
+    if(Object.values(params).some(v=>v!==null)) { anyValue=true; break; }
+  }
+  if(!anyValue){
+    showToast('Insira ao menos um resultado antes de gerar o laudo.','#e53e3e'); return;
+  }
+
+  r.status='liberado';
+  showToast('Laudo gerado! Redirecionando…');
+
+  // Pass data via sessionStorage for reports.html
+  const reportData={
+    requestId:currentRequestId,
+    os:r.os,
+    patientId:r.patientId,
+    doctorId:r.doctorId,
+    examIds:r.examIds,
+    values:enteredValues,
+    generatedAt:new Date().toISOString()
+  };
+  sessionStorage.setItem('pendingReport', JSON.stringify(reportData));
+
+  setTimeout(()=>window.location.href='reports.html',1500);
+}
+
+/* ══════════════════════════════════════
+   MODAL UTILS
+══════════════════════════════════════ */
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(o=>o.classList.remove('open'));});
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+applyFilters();
+</script>
+</body>
+</html>

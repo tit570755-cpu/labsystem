@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exames e Resultados - LabSystem</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-flask-vial"></i> LabSystem
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                <a href="patients.html" class="nav-item"><i class="fa-solid fa-users"></i> Pacientes</a>
+                <a href="requests.html" class="nav-item"><i class="fa-solid fa-file-medical"></i> Requisições</a>
+                <a href="exams.html" class="nav-item active"><i class="fa-solid fa-vial"></i> Exames & Resultados</a>
+                <a href="reports.html" class="nav-item"><i class="fa-solid fa-file-pdf"></i> Laudos</a>
+                <a href="finance.html" class="nav-item"><i class="fa-solid fa-wallet"></i> Financeiro</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <span style="color: var(--text-muted); font-size: 0.875rem;">Setor Técnico</span>
+                    <div style="font-weight: 600; font-size: 1.1rem;">Lançamento de Resultados</div>
+                </div>
+                <div class="user-profile">
+                    <div class="avatar">U</div>
+                    <span class="user-name">User</span>
+                    <button id="logoutBtn" class="btn btn-danger" style="margin-left: 1rem;"><i class="fa-solid fa-power-off"></i></button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="page-header">
+                    <h1 class="page-title">Mapa de Trabalho (Worklist)</h1>
+                    <div class="flex gap-2">
+                        <select class="form-control" style="width: auto;">
+                            <option>Todos os Setores</option>
+                            <option>Hematologia</option>
+                            <option>Bioquímica</option>
+                            <option>Imunologia</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tubo/Amostra</th>
+                                    <th>Exame</th>
+                                    <th>Paciente</th>
+                                    <th>Setor</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="worklist-table">
+                                <tr>
+                                    <td><div class="flex items-center gap-2"><div style="width: 12px; height: 12px; border-radius: 50%; background-color: purple;"></div> 100245</div></td>
+                                    <td>Hemograma Completo</td>
+                                    <td>Maria Oliveira Souza</td>
+                                    <td>Hematologia</td>
+                                    <td><span class="badge badge-analyzing">Em Análise</span></td>
+                                    <td>
+                                        <button class="btn btn-primary" style="padding: 0.25rem 0.5rem;" onclick="openResultModal('Hemograma Completo', 'Maria Oliveira Souza')">Digitar Resultados</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><div class="flex items-center gap-2"><div style="width: 12px; height: 12px; border-radius: 50%; background-color: red;"></div> 100246</div></td>
+                                    <td>Colesterol Total</td>
+                                    <td>João Carlos Silva</td>
+                                    <td>Bioquímica</td>
+                                    <td><span class="badge badge-pending">Pendente Coleta</span></td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" disabled>Aguardando</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Result Entry Modal -->
+    <div class="modal-overlay" id="resultModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title" id="modal-exam-name">Exame</h2>
+                    <span style="font-size: 0.875rem; color: var(--text-muted);" id="modal-patient-name">Paciente</span>
+                </div>
+                <button class="modal-close" onclick="document.getElementById('resultModal').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="resultForm">
+                    <!-- Example dynamic fields for Hemograma -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Hemácias (milhões/mm³)</label>
+                            <input type="number" step="0.1" class="form-control" value="4.8">
+                            <small class="text-muted">Ref: 4.5 a 5.9</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Hemoglobina (g/dL)</label>
+                            <input type="number" step="0.1" class="form-control" value="14.2">
+                            <small class="text-muted">Ref: 13.5 a 17.5</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label">Observações Técnicas</label>
+                        <textarea class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('resultModal').classList.remove('active')">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveResult()">Salvar e Liberar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+    <script>
+        function openResultModal(exam, patient) {
+            document.getElementById('modal-exam-name').textContent = exam;
+            document.getElementById('modal-patient-name').textContent = patient;
+            document.getElementById('resultModal').classList.add('active');
+        }
+
+        function saveResult() {
+            // Mock save
+            alert('Resultados salvos com sucesso! Laudo disponível para liberação.');
+            document.getElementById('resultModal').classList.remove('active');
+            // Normally would refresh worklist here
+        }
+    </script>
+</body>
+</html>

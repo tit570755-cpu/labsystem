@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laudos - LabSystem</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-flask-vial"></i> LabSystem
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                <a href="patients.html" class="nav-item"><i class="fa-solid fa-users"></i> Pacientes</a>
+                <a href="requests.html" class="nav-item"><i class="fa-solid fa-file-medical"></i> Requisições</a>
+                <a href="exams.html" class="nav-item"><i class="fa-solid fa-vial"></i> Exames & Resultados</a>
+                <a href="reports.html" class="nav-item active"><i class="fa-solid fa-file-pdf"></i> Laudos</a>
+                <a href="finance.html" class="nav-item"><i class="fa-solid fa-wallet"></i> Financeiro</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <span style="color: var(--text-muted); font-size: 0.875rem;">Liberação</span>
+                    <div style="font-weight: 600; font-size: 1.1rem;">Laudos Laboratoriais</div>
+                </div>
+                <div class="user-profile">
+                    <div class="avatar">U</div>
+                    <span class="user-name">User</span>
+                    <button id="logoutBtn" class="btn btn-danger" style="margin-left: 1rem;"><i class="fa-solid fa-power-off"></i></button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="page-header">
+                    <h1 class="page-title">Emissão de Laudos</h1>
+                </div>
+
+                <div class="card">
+                    <div class="flex justify-between items-center" style="margin-bottom: 1.5rem;">
+                        <h3>Laudos Prontos para Emissão</h3>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <input type="text" class="form-control" placeholder="Buscar Protocolo...">
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Protocolo</th>
+                                    <th>Paciente</th>
+                                    <th>Exames</th>
+                                    <th>Data Liberação</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>#20260902</strong></td>
+                                    <td>Maria Oliveira Souza</td>
+                                    <td>Hemograma, Glicose</td>
+                                    <td>09/09/2026 10:15</td>
+                                    <td><span class="badge badge-released">Liberado</span></td>
+                                    <td>
+                                        <button class="btn btn-primary" onclick="generatePDF('Maria Oliveira Souza', '20260902')" style="padding: 0.25rem 0.5rem;"><i class="fa-solid fa-file-pdf"></i> Gerar PDF</button>
+                                        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" title="Assinar Digitalmente"><i class="fa-solid fa-signature"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>#20260901</strong></td>
+                                    <td>João Carlos Silva</td>
+                                    <td>Colesterol Total</td>
+                                    <td>08/09/2026 16:30</td>
+                                    <td><span class="badge badge-released">Liberado</span></td>
+                                    <td>
+                                        <button class="btn btn-primary" onclick="generatePDF('João Carlos Silva', '20260901')" style="padding: 0.25rem 0.5rem;"><i class="fa-solid fa-file-pdf"></i> Gerar PDF</button>
+                                        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" title="Assinar Digitalmente"><i class="fa-solid fa-signature"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+    <script>
+        function generatePDF(patientName, protocol) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFillColor(59, 130, 246); // Primary Color
+            doc.rect(0, 0, 210, 30, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("LabSystem", 14, 20);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text("Laboratório de Análises Clínicas Avançadas", 60, 20);
+            
+            // Patient Info
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("DADOS DO PACIENTE", 14, 40);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Paciente: ${patientName}`, 14, 48);
+            doc.text(`Protocolo: ${protocol}`, 140, 48);
+            doc.text(`Data da Coleta: ${new Date().toLocaleDateString('pt-BR')}`, 14, 54);
+            doc.text(`Médico Solicitante: Dr. Roberto Campos`, 14, 60);
+            
+            doc.line(14, 65, 196, 65); // separator
+            
+            // Results Table
+            doc.setFont("helvetica", "bold");
+            doc.text("HEMOGRAMA COMPLETO", 14, 75);
+            doc.setFont("helvetica", "normal");
+            
+            doc.autoTable({
+                startY: 80,
+                head: [['Exame', 'Resultado', 'Unidade', 'Valores de Referência']],
+                body: [
+                    ['Hemácias', '4.8', 'milhões/mm³', '4.5 a 5.9'],
+                    ['Hemoglobina', '14.2', 'g/dL', '13.5 a 17.5'],
+                    ['Hematócrito', '42.5', '%', '41.0 a 53.0'],
+                    ['Leucócitos', '7.500', '/mm³', '4.500 a 11.000'],
+                    ['Plaquetas', '250.000', '/mm³', '150.000 a 400.000']
+                ],
+                theme: 'striped',
+                headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0] }
+            });
+            
+            const nextY = doc.lastAutoTable.finalY + 15;
+            
+            doc.setFont("helvetica", "bold");
+            doc.text("GLICOSE EM JEJUM", 14, nextY);
+            doc.setFont("helvetica", "normal");
+            
+            doc.autoTable({
+                startY: nextY + 5,
+                head: [['Exame', 'Resultado', 'Unidade', 'Valores de Referência']],
+                body: [
+                    ['Glicose', { content: '105', styles: { textColor: [239, 68, 68], fontStyle: 'bold' } }, 'mg/dL', 'Inferior a 99 mg/dL']
+                ],
+                theme: 'striped',
+                headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0] }
+            });
+            
+            // Footer Signature
+            doc.setFontSize(9);
+            doc.text("Liberado por:", 14, 250);
+            doc.setFont("helvetica", "bold");
+            const user = JSON.parse(localStorage.getItem('labsystem_user') || '{}');
+            doc.text(`${user.name || 'Biomédico Responsável'} - CRBM: ${user.crbm || '12345'}`, 14, 255);
+            doc.setFont("helvetica", "normal");
+            doc.text("Assinatura Digital Verificada", 14, 260);
+            
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text("Este documento atende aos requisitos da LGPD (Lei 13.709/2018).", 14, 280);
+            
+            doc.save(`Laudo_${protocol}_${patientName.replace(/\s+/g, '_')}.pdf`);
+        }
+    </script>
+</body>
+</html>

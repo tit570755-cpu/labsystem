@@ -1,0 +1,4 @@
+{"level":"info","message":"🔬 LabSystem - Laboratório de Análises Clínicas","timestamp":"2026-06-08T23:15:08.203Z"}
+{"level":"info","message":"🚀 Servidor rodando em http://localhost:3000","timestamp":"2026-06-08T23:15:08.211Z"}
+{"level":"info","message":"📊 Ambiente: development","timestamp":"2026-06-08T23:15:08.211Z"}
+{"level":"warn","message":"Tentativa de login com email inválido: unoparibaiti@gmail.com","timestamp":"2026-06-08T23:15:51.018Z"}

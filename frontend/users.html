@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestão de Usuários – LabSystem</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="api.js" defer></script>
+  <style>
+    /* ── Page-specific overrides ── */
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #21262d;
+      --border:    #30363d;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --accent:    #58a6ff;
+      --green:     #3fb950;
+      --red:       #f85149;
+      --yellow:    #d29922;
+      --purple:    #bc8cff;
+      --radius:    8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar-logo .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px; color: #fff;
+    }
+    .sidebar-logo span { font-size: 18px; font-weight: 700; color: var(--text); }
+
+    .sidebar-nav { flex: 1; padding: 12px 0; }
+    .nav-section { padding: 8px 16px 4px; font-size: 10px; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--muted); }
+    .nav-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; color: var(--muted);
+      text-decoration: none; font-size: 14px;
+      border-left: 3px solid transparent;
+      transition: all .15s;
+    }
+    .nav-link:hover { color: var(--text); background: var(--surface2); }
+    .nav-link.active { color: var(--accent); border-left-color: var(--accent); background: rgba(88,166,255,.08); }
+    .nav-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); }
+    .user-chip {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px; border-radius: var(--radius);
+      cursor: pointer; transition: background .15s;
+    }
+    .user-chip:hover { background: var(--surface2); }
+    .avatar-sm {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg,#58a6ff,#bc8cff);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .user-chip-info { flex: 1; min-width: 0; }
+    .user-chip-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-chip-role { font-size: 11px; color: var(--muted); }
+
+    /* ── Main ── */
+    .main {
+      margin-left: 240px;
+      flex: 1;
+      padding: 32px;
+      max-width: 100%;
+    }
+
+    /* ── Page Header ── */
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .page-header h1 { font-size: 24px; font-weight: 700; }
+    .page-header p { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--radius);
+      font-size: 14px; font-weight: 500; cursor: pointer;
+      border: 1px solid transparent; transition: all .15s;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--accent); color: #0d1117; border-color: var(--accent); }
+    .btn-primary:hover { background: #79b8ff; border-color: #79b8ff; }
+    .btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover { background: var(--surface2); }
+    .btn-danger { background: transparent; color: var(--red); border-color: var(--red); }
+    .btn-danger:hover { background: rgba(248,81,73,.1); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-icon { padding: 6px; border-radius: var(--radius); background: transparent;
+      border: 1px solid var(--border); color: var(--muted); cursor: pointer;
+      display: inline-flex; align-items: center; transition: all .15s; }
+    .btn-icon:hover { color: var(--text); background: var(--surface2); }
+    .btn-icon.edit:hover { color: var(--accent); border-color: var(--accent); }
+    .btn-icon.danger:hover { color: var(--red); border-color: var(--red); }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-header h2 { font-size: 16px; font-weight: 600; }
+    .card-body { padding: 20px; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      padding: 10px 16px; text-align: left;
+      color: var(--muted); font-weight: 500; font-size: 11px;
+      text-transform: uppercase; letter-spacing: .05em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    tbody td { padding: 12px 16px; vertical-align: middle; }
+
+    /* ── Avatar ── */
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .badge-admin   { background: rgba(188,140,255,.15); color: var(--purple); border: 1px solid rgba(188,140,255,.3); }
+    .badge-biomedic{ background: rgba(88,166,255,.15);  color: var(--accent); border: 1px solid rgba(88,166,255,.3); }
+    .badge-reception{background: rgba(63,185,80,.15);   color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
+    .badge-action  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── Toggle ── */
+    .toggle {
+      position: relative; width: 40px; height: 22px; cursor: pointer;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--border); border-radius: 22px; transition: background .2s;
+    }
+    .toggle input:checked ~ .toggle-track { background: var(--green); }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #fff; transition: transform .2s;
+    }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+    /* ── Audit filters ── */
+    .audit-filters {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    .audit-filters select,
+    .audit-filters input {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius);
+      padding: 7px 10px; font-size: 13px;
+    }
+    .audit-filters select:focus,
+    .audit-filters input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 540px; max-width: 95vw;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,.6);
+      animation: slideUp .2s ease;
+    }
+    @keyframes slideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: none; } }
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-header h3 { font-size: 17px; font-weight: 700; }
+    .modal-close {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; padding: 4px; border-radius: 4px; line-height: 1;
+      font-size: 20px; transition: color .15s;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 24px; }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+    }
+
+    /* ── Form ── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    input[type=text], input[type=email], input[type=password], select, textarea {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius);
+      padding: 9px 12px; font-size: 14px; width: 100%;
+      transition: border-color .15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(88,166,255,.15);
+    }
+    input::placeholder { color: var(--muted); }
+    .hint { font-size: 11px; color: var(--muted); }
+
+    /* ── Password strength ── */
+    .strength-bar { height: 4px; border-radius: 2px; background: var(--border); margin-top: 6px; }
+    .strength-fill { height: 100%; border-radius: 2px; transition: width .3s, background .3s; width: 0; }
+    .strength-label { font-size: 11px; margin-top: 4px; }
+
+    /* ── Checkbox ── */
+    .checkbox-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 0;
+    }
+    .checkbox-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+    .checkbox-row label { font-size: 14px; color: var(--text); text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+    /* ── Status dot ── */
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px;
+    }
+    .dot-active { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot-inactive { background: var(--muted); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 48px; color: var(--muted);
+    }
+    .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: .4; }
+    .empty-state p { font-size: 14px; }
+
+    /* ── Toast ── */
+    #toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 16px;
+      font-size: 13px; min-width: 240px; max-width: 320px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      animation: slideIn .25s ease;
+      display: flex; align-items: center; gap: 10px;
+    }
+    @keyframes slideIn { from { opacity:0; transform: translateX(24px); } to { opacity:1; transform: none; } }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.error   { border-left: 3px solid var(--red); }
+    .toast.info    { border-left: 3px solid var(--accent); }
+
+    /* ── Misc ── */
+    .user-cell { display: flex; align-items: center; gap: 10px; }
+    .user-meta-name { font-weight: 600; font-size: 13px; }
+    .user-meta-user { font-size: 11px; color: var(--muted); }
+    .actions-cell { display: flex; gap: 6px; align-items: center; }
+    .section-gap { margin-top: 32px; }
+    .flex-between { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">L</div>
+    <span>LabSystem</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">Principal</div>
+    <a href="dashboard.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="exams.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-3-3v6M7 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-2M9 3h6v2H9V3z"/></svg>
+      Exames
+    </a>
+    <a href="patients.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Pacientes
+    </a>
+    <a href="queue.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Fila
+    </a>
+
+    <div class="nav-section">Administração</div>
+    <a href="users.html" class="nav-link active">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Usuários
+    </a>
+    <a href="financial.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+      Financeiro
+    </a>
+    <a href="settings.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Configurações
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-chip" id="sidebar-user">
+      <div class="avatar-sm" id="sidebar-avatar">AD</div>
+      <div class="user-chip-info">
+        <div class="user-chip-name" id="sidebar-name">Administrador</div>
+        <div class="user-chip-role" id="sidebar-role">admin</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main class="main">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1>Gestão de Usuários</h1>
+      <p>Gerencie os acessos e permissões do sistema</p>
+    </div>
+    <button class="btn btn-primary" onclick="openModal()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Novo Usuário
+    </button>
+  </div>
+
+  <!-- Users Card -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Usuários Cadastrados</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="search-users" placeholder="Buscar usuário…"
+          style="padding:6px 10px;font-size:13px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);width:180px;"
+          oninput="filterUsers()" />
+        <select id="filter-role" onchange="filterUsers()"
+          style="padding:6px 10px;font-size:13px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);">
+          <option value="">Todos os perfis</option>
+          <option value="admin">Administrador</option>
+          <option value="biomedic">Biomédico</option>
+          <option value="reception">Recepção</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="users-table">
+        <thead>
+          <tr>
+            <th>Usuário</th>
+            <th>Username</th>
+            <th>Perfil</th>
+            <th>Email</th>
+            <th>CRBM/CRM</th>
+            <th>Último Acesso</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr><td colspan="8"><div class="empty-state">
+            <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <p>Carregando usuários…</p>
+          </div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Audit Log Section -->
+  <div class="card section-gap">
+    <div class="card-header">
+      <h2>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;vertical-align:-2px;margin-right:6px;color:var(--accent)"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Log de Auditoria <span style="font-size:12px;color:var(--muted);font-weight:400;">(LGPD)</span>
+      </h2>
+      <button class="btn btn-secondary btn-sm" onclick="exportAuditCSV()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Exportar CSV
+      </button>
+    </div>
+    <div class="card-body" style="padding-bottom:0;">
+      <div class="audit-filters" style="margin-bottom:16px;">
+        <input type="text" id="audit-search-user" placeholder="Filtrar por usuário…" oninput="filterAudit()" />
+        <select id="audit-filter-action" onchange="filterAudit()">
+          <option value="">Todas as ações</option>
+          <option value="LOGIN">Login</option>
+          <option value="LOGOUT">Logout</option>
+          <option value="CREATE">Criação</option>
+          <option value="UPDATE">Atualização</option>
+          <option value="DELETE">Exclusão</option>
+          <option value="EXPORT">Exportação</option>
+          <option value="VIEW">Visualização</option>
+        </select>
+        <input type="date" id="audit-date-from" onchange="filterAudit()" style="width:auto;" />
+        <input type="date" id="audit-date-to"   onchange="filterAudit()" style="width:auto;" />
+        <button class="btn btn-secondary btn-sm" onclick="clearAuditFilters()">Limpar</button>
+      </div>
+    </div>
+    <div class="table-wrap" style="padding:0 0 20px;">
+      <table id="audit-table">
+        <thead>
+          <tr>
+            <th>Data / Hora</th>
+            <th>Usuário</th>
+            <th>Ação</th>
+            <th>Entidade</th>
+            <th>Detalhes</th>
+          </tr>
+        </thead>
+        <tbody id="audit-tbody">
+          <tr><td colspan="5"><div class="empty-state"><p>Carregando logs…</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══════════════ MODAL ══════════════ -->
+<div class="modal-backdrop" id="user-modal" onclick="closeModalBackdrop(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Novo Usuário</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="user-form" autocomplete="off">
+        <input type="hidden" id="edit-id" />
+        <div class="form-grid">
+
+          <div class="form-group full">
+            <label>Nome completo</label>
+            <input type="text" id="f-name" placeholder="Ex: Dr. João da Silva" required />
+          </div>
+
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="f-username" placeholder="sem espaços" required
+              oninput="this.value=this.value.replace(/\s/g,'')" />
+            <span class="hint">Usado para login. Sem espaços.</span>
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="f-email" placeholder="email@laboratorio.com" required />
+          </div>
+
+          <div class="form-group">
+            <label>Perfil</label>
+            <select id="f-role" onchange="updateRoleFields()" required>
+              <option value="">Selecione…</option>
+              <option value="admin">Administrador</option>
+              <option value="biomedic">Biomédico</option>
+              <option value="reception">Recepção</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="crbm-group" style="display:none;">
+            <label>CRBM / CRM</label>
+            <input type="text" id="f-crbm" placeholder="Ex: CRBM-1234" />
+          </div>
+
+          <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="f-password" placeholder="••••••••"
+              oninput="checkPasswordStrength()" autocomplete="new-password" />
+            <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+            <span class="strength-label" id="strength-label" style="color:var(--muted);"></span>
+          </div>
+
+          <div class="form-group">
+            <label>Confirmar Senha</label>
+            <input type="password" id="f-password2" placeholder="••••••••" autocomplete="new-password" />
+          </div>
+
+          <div class="form-group full">
+            <div class="checkbox-row">
+              <input type="checkbox" id="f-active" checked />
+              <label for="f-active">Usuário ativo (permite login no sistema)</label>
+            </div>
+          </div>
+
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUser()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v13a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- ══════════════ SCRIPT ══════════════ -->
+<script>
+/* ── Data (mock – replace with real API calls) ── */
+const CURRENT_USER = { id: 1, name: 'Administrador', username: 'admin', role: 'admin' };
+
+let users = [
+  { id:1, name:'Administrador Sistema', username:'admin',   role:'admin',     email:'admin@lab.com',      crbm:'',          lastAccess:'2026-09-09T18:30:00', active:true  },
+  { id:2, name:'Dra. Ana Beatriz Lima',  username:'anabio', role:'biomedic',  email:'ana@lab.com',        crbm:'CRBM-1234', lastAccess:'2026-09-09T09:15:00', active:true  },
+  { id:3, name:'Carlos Recepção',        username:'carlos', role:'reception', email:'carlos@lab.com',     crbm:'',          lastAccess:'2026-09-08T16:00:00', active:true  },
+  { id:4, name:'Dra. Fernanda Saude',    username:'fersa',  role:'biomedic',  email:'fernanda@lab.com',   crbm:'CRM-5678',  lastAccess:'2026-09-07T11:20:00', active:false },
+  { id:5, name:'Marina Oliveira',        username:'marina', role:'reception', email:'marina@lab.com',     crbm:'',          lastAccess:'2026-09-05T14:00:00', active:true  },
+];
+
+let auditLog = [
+  { id:1,  ts:'2026-09-09T18:30:00', user:'admin',  action:'LOGIN',  entity:'Sistema',  details:'Login bem-sucedido' },
+  { id:2,  ts:'2026-09-09T18:32:00', user:'admin',  action:'VIEW',   entity:'Usuários', details:'Listagem de usuários acessada' },
+  { id:3,  ts:'2026-09-09T09:15:00', user:'anabio', action:'LOGIN',  entity:'Sistema',  details:'Login bem-sucedido' },
+  { id:4,  ts:'2026-09-09T09:17:00', user:'anabio', action:'UPDATE', entity:'Exame #128',details:'Resultado liberado' },
+  { id:5,  ts:'2026-09-08T16:00:00', user:'carlos', action:'CREATE', entity:'Paciente', details:'Novo paciente cadastrado: Roberto Souza' },
+  { id:6,  ts:'2026-09-08T10:05:00', user:'admin',  action:'EXPORT', entity:'Relatório',details:'Exportação financeira mensal' },
+  { id:7,  ts:'2026-09-07T11:20:00', user:'fersa',  action:'LOGIN',  entity:'Sistema',  details:'Login bem-sucedido' },
+  { id:8,  ts:'2026-09-07T08:00:00', user:'admin',  action:'DELETE', entity:'Usuário #6',details:'Conta inativada: antigo funcionário' },
+  { id:9,  ts:'2026-09-06T17:45:00', user:'marina', action:'UPDATE', entity:'Paciente #44',details:'Dados de contato atualizados' },
+  { id:10, ts:'2026-09-05T14:00:00', user:'marina', action:'LOGIN',  entity:'Sistema',  details:'Login bem-sucedido' },
+];
+
+let nextUserId = 6;
+let filteredUsers = [...users];
+let filteredAudit = [...auditLog];
+
+/* ── Auth check ── */
+(function checkAuth() {
+  try {
+    const session = JSON.parse(localStorage.getItem('labsystem_session') || 'null');
+    if (!session || session.role !== 'admin') {
+      alert('Acesso restrito: apenas administradores.');
+      window.location.href = 'index.html';
+    } else {
+      document.getElementById('sidebar-name').textContent = session.name || CURRENT_USER.name;
+      document.getElementById('sidebar-role').textContent = session.role || 'admin';
+      document.getElementById('sidebar-avatar').textContent = initials(session.name || 'AD');
+    }
+  } catch(e) {
+    /* dev mode – allow */
+    console.warn('Auth: dev mode (no session).');
+  }
+})();
+
+/* ── Helpers ── */
+function initials(name) {
+  return name.trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+}
+function avatarColor(id) {
+  const colors = ['#58a6ff','#3fb950','#d29922','#f85149','#bc8cff','#79c0ff'];
+  return colors[id % colors.length];
+}
+function roleBadge(role) {
+  const map = { admin:'badge-admin', biomedic:'badge-biomedic', reception:'badge-reception' };
+  const labels = { admin:'Administrador', biomedic:'Biomédico', reception:'Recepção' };
+  return `<span class="badge ${map[role]||''}">${labels[role]||role}</span>`;
+}
+function actionBadge(action) {
+  const colors = { LOGIN:'#3fb950',LOGOUT:'#8b949e',CREATE:'#58a6ff',UPDATE:'#d29922',DELETE:'#f85149',EXPORT:'#bc8cff',VIEW:'#79c0ff' };
+  const c = colors[action] || '#8b949e';
+  return `<span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}44;">${action}</span>`;
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function relTime(iso) {
+  if (!iso) return '—';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff/60000);
+  if (mins < 1)  return 'agora mesmo';
+  if (mins < 60) return `há ${mins}min`;
+  const hrs = Math.floor(mins/60);
+  if (hrs < 24)  return `há ${hrs}h`;
+  return `há ${Math.floor(hrs/24)}d`;
+}
+function toast(msg, type='info') {
+  const tc = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${msg}</span>`;
+  tc.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+/* ── Render Users ── */
+function renderUsers(list) {
+  const tbody = document.getElementById('users-tbody');
+  if (!list || list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" width="48" height="48"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <p>Nenhum usuário encontrado</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(u => `
+    <tr id="row-user-${u.id}">
+      <td>
+        <div class="user-cell">
+          <div class="avatar" style="background:${avatarColor(u.id)}">${initials(u.name)}</div>
+          <div>
+            <div class="user-meta-name">${u.name}</div>
+            <div class="user-meta-user">@${u.username}</div>
+          </div>
+        </div>
+      </td>
+      <td style="color:var(--muted);font-size:12px;">@${u.username}</td>
+      <td>${roleBadge(u.role)}</td>
+      <td style="font-size:12px;">${u.email}</td>
+      <td style="font-size:12px;color:var(--muted);">${u.crbm || '—'}</td>
+      <td style="font-size:12px;color:var(--muted);" title="${fmtDate(u.lastAccess)}">${relTime(u.lastAccess)}</td>
+      <td>
+        <label class="toggle" title="${u.active?'Ativo – clique para inativar':'Inativo – clique para ativar'}">
+          <input type="checkbox" ${u.active?'checked':''} onchange="toggleUser(${u.id},this)" ${u.id===CURRENT_USER.id?'disabled':''} />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn-icon edit" title="Editar" onclick="editUser(${u.id})">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          ${u.id !== CURRENT_USER.id ? `
+          <button class="btn-icon danger" title="Inativar conta" onclick="confirmToggle(${u.id})">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          </button>` : `<button class="btn-icon" title="Sua própria conta" disabled style="opacity:.3;">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          </button>`}
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+/* ── Render Audit ── */
+function renderAuditLog(list) {
+  const tbody = document.getElementById('audit-tbody');
+  if (!list || list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><p>Nenhum log encontrado</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(l => `
+    <tr>
+      <td style="font-size:12px;white-space:nowrap;">${fmtDate(l.ts)}</td>
+      <td><span style="font-size:12px;font-weight:600;">@${l.user}</span></td>
+      <td>${actionBadge(l.action)}</td>
+      <td style="font-size:12px;color:var(--muted);">${l.entity}</td>
+      <td style="font-size:12px;">${l.details}</td>
+    </tr>`).join('');
+}
+
+/* ── Filters ── */
+function filterUsers() {
+  const q = document.getElementById('search-users').value.toLowerCase();
+  const r = document.getElementById('filter-role').value;
+  filteredUsers = users.filter(u =>
+    (!q || u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)) &&
+    (!r || u.role === r)
+  );
+  renderUsers(filteredUsers);
+}
+
+function filterAudit() {
+  const q  = document.getElementById('audit-search-user').value.toLowerCase();
+  const ac = document.getElementById('audit-filter-action').value;
+  const df = document.getElementById('audit-date-from').value;
+  const dt = document.getElementById('audit-date-to').value;
+  filteredAudit = auditLog.filter(l =>
+    (!q  || l.user.toLowerCase().includes(q) || l.details.toLowerCase().includes(q)) &&
+    (!ac || l.action === ac) &&
+    (!df || l.ts >= df) &&
+    (!dt || l.ts <= dt + 'T23:59:59')
+  );
+  renderAuditLog(filteredAudit);
+}
+
+function clearAuditFilters() {
+  ['audit-search-user','audit-filter-action','audit-date-from','audit-date-to'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+  });
+  filteredAudit = [...auditLog];
+  renderAuditLog(filteredAudit);
+}
+
+/* ── Modal ── */
+function openModal(user = null) {
+  document.getElementById('modal-title').textContent = user ? 'Editar Usuário' : 'Novo Usuário';
+  document.getElementById('edit-id').value = user ? user.id : '';
+  document.getElementById('f-name').value     = user ? user.name     : '';
+  document.getElementById('f-username').value = user ? user.username : '';
+  document.getElementById('f-email').value    = user ? user.email    : '';
+  document.getElementById('f-role').value     = user ? user.role     : '';
+  document.getElementById('f-crbm').value     = user ? user.crbm     : '';
+  document.getElementById('f-password').value  = '';
+  document.getElementById('f-password2').value = '';
+  document.getElementById('f-active').checked  = user ? user.active  : true;
+  document.getElementById('strength-fill').style.width = '0';
+  document.getElementById('strength-label').textContent = '';
+  updateRoleFields();
+  document.getElementById('user-modal').classList.add('open');
+  document.getElementById('f-name').focus();
+}
+
+function closeModal() {
+  document.getElementById('user-modal').classList.remove('open');
+}
+
+function closeModalBackdrop(e) {
+  if (e.target.id === 'user-modal') closeModal();
+}
+
+function editUser(id) {
+  const user = users.find(u => u.id === id);
+  if (user) openModal(user);
+}
+
+function updateRoleFields() {
+  const role = document.getElementById('f-role').value;
+  const crbmGroup = document.getElementById('crbm-group');
+  crbmGroup.style.display = (role === 'biomedic' || role === 'admin') ? '' : 'none';
+}
+
+/* ── Save ── */
+function saveUser() {
+  const id       = document.getElementById('edit-id').value;
+  const name     = document.getElementById('f-name').value.trim();
+  const username = document.getElementById('f-username').value.trim();
+  const email    = document.getElementById('f-email').value.trim();
+  const role     = document.getElementById('f-role').value;
+  const crbm     = document.getElementById('f-crbm').value.trim();
+  const pw       = document.getElementById('f-password').value;
+  const pw2      = document.getElementById('f-password2').value;
+  const active   = document.getElementById('f-active').checked;
+
+  if (!name || !username || !email || !role) { toast('Preencha todos os campos obrigatórios.','error'); return; }
+  if (!id && !pw) { toast('Informe uma senha para o novo usuário.','error'); return; }
+  if (pw && pw !== pw2) { toast('As senhas não coincidem.','error'); return; }
+  if (pw && pw.length < 6) { toast('Senha muito curta (mínimo 6 caracteres).','error'); return; }
+
+  const existing = users.find(u => u.username === username && u.id != id);
+  if (existing) { toast('Username já está em uso.','error'); return; }
+
+  if (id) {
+    const idx = users.findIndex(u => u.id == id);
+    if (idx > -1) {
+      users[idx] = { ...users[idx], name, username, email, role, crbm, active };
+      addAuditEntry('UPDATE', `Usuário #${id}`, `Dados de @${username} atualizados`);
+      toast('Usuário atualizado com sucesso!','success');
+    }
+  } else {
+    const newUser = { id: nextUserId++, name, username, email, role, crbm, lastAccess: null, active };
+    users.push(newUser);
+    addAuditEntry('CREATE', 'Usuário', `Novo usuário @${username} criado`);
+    toast('Usuário criado com sucesso!','success');
+  }
+
+  filteredUsers = [...users];
+  renderUsers(filteredUsers);
+  closeModal();
+}
+
+/* ── Toggle User ── */
+function toggleUser(id, checkbox) {
+  if (id === CURRENT_USER.id) { toast('Você não pode alterar sua própria conta.','error'); return; }
+  const user = users.find(u => u.id === id);
+  if (!user) return;
+  user.active = checkbox ? checkbox.checked : !user.active;
+  addAuditEntry(user.active ? 'UPDATE' : 'UPDATE', `Usuário #${id}`,
+    `@${user.username} ${user.active ? 'ativado' : 'inativado'}`);
+  toast(`Usuário ${user.active?'ativado':'inativado'} com sucesso.`, user.active?'success':'info');
+  renderUsers(filteredUsers.length < users.length ? filteredUsers : users);
+}
+
+function confirmToggle(id) {
+  const user = users.find(u => u.id === id);
+  if (!user) return;
+  if (confirm(`Deseja ${user.active?'inativar':'ativar'} o usuário @${user.username}?`)) toggleUser(id);
+}
+
+/* ── Audit helpers ── */
+function addAuditEntry(action, entity, details) {
+  auditLog.unshift({ id: Date.now(), ts: new Date().toISOString(), user: CURRENT_USER.username, action, entity, details });
+  renderAuditLog(auditLog.slice(0,50));
+}
+
+/* ── Export CSV ── */
+function exportAuditCSV() {
+  const rows = [['Data/Hora','Usuário','Ação','Entidade','Detalhes']];
+  filteredAudit.forEach(l => rows.push([fmtDate(l.ts), l.user, l.action, l.entity, l.details]));
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `audit_log_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  addAuditEntry('EXPORT','Log de Auditoria','Exportação CSV do log de auditoria');
+  toast('CSV exportado!','success');
+}
+
+/* ── Password strength ── */
+function checkPasswordStrength() {
+  const pw = document.getElementById('f-password').value;
+  const fill = document.getElementById('strength-fill');
+  const label = document.getElementById('strength-label');
+  let score = 0;
+  if (pw.length >= 6)  score++;
+  if (pw.length >= 10) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const levels = [
+    {w:'0%',   c:'var(--red)',    t:''},
+    {w:'25%',  c:'var(--red)',    t:'Muito fraca'},
+    {w:'50%',  c:'var(--yellow)', t:'Fraca'},
+    {w:'75%',  c:'var(--yellow)', t:'Razoável'},
+    {w:'90%',  c:'var(--green)',  t:'Forte'},
+    {w:'100%', c:'var(--green)',  t:'Muito forte'},
+  ];
+  const lvl = levels[Math.min(score, 5)];
+  fill.style.width = lvl.w;
+  fill.style.background = lvl.c;
+  label.style.color = lvl.c;
+  label.textContent = lvl.t;
+}
+
+/* ── Init ── */
+renderUsers(users);
+renderAuditLog(auditLog);
+</script>
+</body>
+</html>
