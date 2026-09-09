@@ -102,3 +102,54 @@ if (!localStorage.getItem('labsystem_seeded')) {
     window.db.set('requests', []);
     localStorage.setItem('labsystem_seeded', 'true');
 }
+
+// LEACLab Global Keyboard Shortcuts
+document.addEventListener('keydown', (e) => {
+    // Esc: Cancelar / Fechar Modais
+    if (e.key === 'Escape') {
+        const activeModal = document.querySelector('.modal-overlay.active');
+        if (activeModal) activeModal.classList.remove('active');
+        return;
+    }
+
+    if (e.ctrlKey) {
+        let prevent = true;
+        switch (e.key.toLowerCase()) {
+            case 'n': // Ctrl+N: Novo atendimento
+                window.location.href = 'requests.html';
+                break;
+            case 'p': // Ctrl+P: Pesquisar paciente
+                window.location.href = 'patients.html';
+                break;
+            case 'o': // Ctrl+O: Novo orçamento
+                window.location.href = 'finance.html';
+                break;
+            case 'c': // Ctrl+C: Registrar coleta (except when copying text)
+                if (window.getSelection().toString().length === 0) {
+                    window.location.href = 'exams.html'; // Or specific collection page
+                } else {
+                    prevent = false; // Allow copy
+                }
+                break;
+            case 't': // Ctrl+T: Triagem
+                window.location.href = 'exams.html';
+                break;
+            case 'r': // Ctrl+R: Resultados
+                window.location.href = 'exams.html';
+                break;
+            case 'l': // Ctrl+L: Liberar laudo
+                window.location.href = 'reports.html';
+                break;
+            case 'e': // Ctrl+E: Emitir etiquetas
+                alert('Módulo de Impressão de Etiquetas: Selecione o paciente primeiro.');
+                break;
+            default:
+                prevent = false;
+        }
+        
+        if (prevent) {
+            e.preventDefault();
+        }
+    }
+});
+

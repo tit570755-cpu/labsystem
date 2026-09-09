@@ -99,83 +99,170 @@
     <script>
         function generatePDF(patientName, protocol) {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            const doc = new jsPDF({ format: 'a4', unit: 'mm' });
             
-            // Header
-            doc.setFillColor(59, 130, 246); // Primary Color
-            doc.rect(0, 0, 210, 30, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(22);
+            // Helper function to draw dots between label and value
+            const drawDottedLine = (doc, label, value, xStart, y, dotXEnd, valueXOffset = 0, isBold = false) => {
+                doc.setFont("helvetica", isBold ? "bold" : "normal");
+                doc.text(label, xStart, y);
+                const labelWidth = doc.getTextWidth(label);
+                
+                // Draw dots manually to match layout
+                doc.setFont("helvetica", "normal");
+                let currentX = xStart + labelWidth + 1;
+                while (currentX < dotXEnd) {
+                    doc.text(".", currentX, y);
+                    currentX += 1.5;
+                }
+                
+                doc.setFont("helvetica", isBold ? "bold" : "normal");
+                doc.text(`: ${value}`, dotXEnd + 1 + valueXOffset, y);
+            };
+
+            // 1. HEADER
+            
+            // Fake Logos (Left and Right)
+            doc.setDrawColor(0);
+            doc.setFillColor(240, 248, 255); // Alice blue
+            doc.circle(25, 20, 10, 'F');
+            doc.circle(25, 20, 10, 'S');
+            doc.setFontSize(8);
             doc.setFont("helvetica", "bold");
-            doc.text("LabSystem", 14, 20);
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            doc.text("Laboratório de Análises Clínicas Avançadas", 60, 20);
+            doc.setTextColor(0, 102, 204);
+            doc.text("UNOPAR", 18, 21);
             
-            // Patient Info
-            doc.setTextColor(0, 0, 0);
+            doc.setFillColor(240, 255, 240); // Honeydew
+            doc.circle(185, 20, 10, 'F');
+            doc.circle(185, 20, 10, 'S');
+            doc.setTextColor(0, 128, 0);
+            doc.text("BIOMED", 178, 21);
+            
+            // Main Title
+            doc.setTextColor(0);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("LEAC Unopar", 105, 22, { align: 'center' });
+            
+            // 2. PATIENT INFO BLOCK
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            
+            let y = 35;
+            // Left Column
+            drawDottedLine(doc, "Nome", `00001-${patientName}`, 14, y, 35);
+            drawDottedLine(doc, "Sexo", "Masculino", 14, y+4, 35);
+            drawDottedLine(doc, "Idade", "58 Ano(s) 10 Mes(es) 22 Dia(s)", 14, y+8, 35);
+            drawDottedLine(doc, "Médico(a)", "NÃO INFORMADO", 14, y+12, 35);
+            drawDottedLine(doc, "Convênio", "1 LEAC", 14, y+16, 35);
+            
+            // Right Column
+            drawDottedLine(doc, "Requisição", protocol, 115, y, 135);
+            drawDottedLine(doc, "Entrada", "17/04/2026", 115, y+4, 135);
+            drawDottedLine(doc, "Impresso", "17/04/2026 12:31", 115, y+8, 135);
+            drawDottedLine(doc, "Destino", "LEAC", 115, y+12, 135);
+            
+            y += 20;
+            
+            // Horizontal line and page indicator
+            doc.setDrawColor(150);
+            doc.setLineWidth(0.2);
+            doc.line(14, y, 180, y);
+            doc.setFontSize(7);
+            doc.text("Pág.: 1/1", 182, y + 1);
+            
+            y += 7;
+            
+            // 3. EXAM TITLE
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "normal");
+            doc.text("HEMOGRAMA COMPLETO", 14, y);
+            
+            y += 4;
+            doc.setFontSize(7);
+            doc.text("Material: Sangue com EDTA Coletado em: 17/04/2026 08:04 Método: ABX Micros 60", 14, y);
+            
+            y += 6;
+            doc.setFontSize(8);
+            doc.text("Valores de Referência", 135, y);
+            
+            y += 6;
+            
+            // 4. ERITROGRAMA
             doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
-            doc.text("DADOS DO PACIENTE", 14, 40);
+            doc.text("ERITROGRAMA", 14, y);
             
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            doc.text(`Paciente: ${patientName}`, 14, 48);
-            doc.text(`Protocolo: ${protocol}`, 140, 48);
-            doc.text(`Data da Coleta: ${new Date().toLocaleDateString('pt-BR')}`, 14, 54);
-            doc.text(`Médico Solicitante: Dr. Roberto Campos`, 14, 60);
-            
-            doc.line(14, 65, 196, 65); // separator
-            
-            // Results Table
-            doc.setFont("helvetica", "bold");
-            doc.text("HEMOGRAMA COMPLETO", 14, 75);
-            doc.setFont("helvetica", "normal");
-            
-            doc.autoTable({
-                startY: 80,
-                head: [['Exame', 'Resultado', 'Unidade', 'Valores de Referência']],
-                body: [
-                    ['Hemácias', '4.8', 'milhões/mm³', '4.5 a 5.9'],
-                    ['Hemoglobina', '14.2', 'g/dL', '13.5 a 17.5'],
-                    ['Hematócrito', '42.5', '%', '41.0 a 53.0'],
-                    ['Leucócitos', '7.500', '/mm³', '4.500 a 11.000'],
-                    ['Plaquetas', '250.000', '/mm³', '150.000 a 400.000']
-                ],
-                theme: 'striped',
-                headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0] }
-            });
-            
-            const nextY = doc.lastAutoTable.finalY + 15;
-            
-            doc.setFont("helvetica", "bold");
-            doc.text("GLICOSE EM JEJUM", 14, nextY);
-            doc.setFont("helvetica", "normal");
-            
-            doc.autoTable({
-                startY: nextY + 5,
-                head: [['Exame', 'Resultado', 'Unidade', 'Valores de Referência']],
-                body: [
-                    ['Glicose', { content: '105', styles: { textColor: [239, 68, 68], fontStyle: 'bold' } }, 'mg/dL', 'Inferior a 99 mg/dL']
-                ],
-                theme: 'striped',
-                headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0] }
-            });
-            
-            // Footer Signature
+            y += 6;
             doc.setFontSize(9);
-            doc.text("Liberado por:", 14, 250);
+            
+            const renderEritro = (label, val, ref) => {
+                drawDottedLine(doc, label, val, 14, y, 55, 0, true);
+                doc.setFont("helvetica", "bold");
+                doc.text(ref, 135, y);
+                y += 4.5;
+            };
+            
+            renderEritro("Hemácias (milhões)", "4,95 /mm3", "3,50 a 5,03 /mm3");
+            renderEritro("Hemoglobina", "14,20 g/dL", "12,0 a 15,5 g/dL");
+            renderEritro("Hematócrito", "44,60 %", "34,9 a 44,5 %");
+            renderEritro("V.C.M.", "90,1 fL", "81,6 a 98,3 fL");
+            renderEritro("H.C.M.", "28,7 pg", "26,0 a 34,0 pg");
+            renderEritro("C.H.C.M.", "31,8 %", "31,0 a 36,0 %");
+            renderEritro("RDW", "12,70 %", "11,5 a 15,5 %");
+            renderEritro("Eritroblastos", "0,00 %", "0");
+            
+            y += 6;
+            
+            // 5. LEUCOGRAMA
+            doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
-            const user = JSON.parse(localStorage.getItem('labsystem_user') || '{}');
-            doc.text(`${user.name || 'Biomédico Responsável'} - CRBM: ${user.crbm || '12345'}`, 14, 255);
-            doc.setFont("helvetica", "normal");
-            doc.text("Assinatura Digital Verificada", 14, 260);
+            doc.text("LEUCOGRAMA", 14, y);
             
+            y += 6;
+            doc.setFontSize(9);
+            
+            drawDottedLine(doc, "Leucócitos totais", "5.870/mm3", 14, y, 55, 0, true);
+            doc.setFont("helvetica", "bold");
+            doc.text("3.500 a 10.500/mm3", 135, y);
+            
+            y += 5;
+            
+            const renderLeuco = (label, perc, abs, refPerc, refAbs) => {
+                drawDottedLine(doc, label, perc, 14, y, 55, 0, true);
+                doc.setFont("helvetica", "bold");
+                doc.text(abs, 95, y, { align: 'right' });
+                doc.text(refPerc, 135, y);
+                doc.text(refAbs, 185, y, { align: 'right' });
+                y += 4.5;
+            };
+            
+            renderLeuco("Blastos", "0,00%", "0,00 /mm3", "0 %", "0 /mm3");
+            renderLeuco("Promielócitos", "0,00%", "0,00 /mm3", "0 %", "0 /mm3");
+            renderLeuco("Mielócitos", "0,00%", "0,00 /mm3", "0 %", "0 /mm3");
+            renderLeuco("Metamielócitos", "0,00%", "0,00 /mm3", "0 %", "0 a 105 /mm3");
+            renderLeuco("Bastonetes", "0,00%", "0,00 /mm3", "0 a 8%", "0 a 840 /mm3");
+            renderLeuco("Segmentados", "39,00%", "2.289,30 /mm3", "48 a 80%", "1.700 a 8.000 /mm3");
+            renderLeuco("Eosinófilos", "4,20%", "246,54 /mm3", "1 a 5%", "50 a 500 /mm3");
+            renderLeuco("Basófilos", "0,20%", "11,74 /mm3", "0 a 1%", "0 a 100 /mm3");
+            renderLeuco("Prolinfócitos", "0,00%", "0,00 /mm3", "0", "0 /mm3");
+            renderLeuco("Linfócitos", "47,10%", "2.764,77 /mm3", "20 a 30%", "900 a 2.900 /mm3");
+            renderLeuco("Linfócitos atípicos", "0,00%", "0,00 /mm3", "0 a 3%", "0 a 300 /mm3");
+            renderLeuco("Monócitos", "9,50%", "557,65 /mm3", "2 a 9%", "100 a 900 /mm3");
+            renderLeuco("Plaquetas", "225mil/mm3", "", "150 a 400 mil/mm3", "");
+            
+            // 6. FOOTER
+            y = 280;
             doc.setFontSize(8);
-            doc.setTextColor(150, 150, 150);
-            doc.text("Este documento atende aos requisitos da LGPD (Lei 13.709/2018).", 14, 280);
+            doc.setFont("helvetica", "bold");
+            doc.text("Endereço: Av. Dra. Fernandina do Amaral", 14, y);
+            doc.text("\"Em tudo, dai graças.\"", 190, y, { align: 'right' });
             
-            doc.save(`Laudo_${protocol}_${patientName.replace(/\s+/g, '_')}.pdf`);
+            y += 4;
+            doc.setFont("helvetica", "normal");
+            doc.text("Gentile, 405 - Centro, Ibaiti - PR, 84900-000", 14, y);
+            doc.text("— 1 Tessalonicenses 5:18", 190, y, { align: 'right' });
+            
+            doc.save(`Laudo_LEAC_${protocol}_${patientName.replace(/\s+/g, '_')}.pdf`);
         }
     </script>
 </body>
