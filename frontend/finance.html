@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-    <div class="layout">
+    <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-brand" style="display: flex; flex-direction: column; align-items: center; padding: 1rem 0;">
@@ -31,22 +31,29 @@
         <!-- Main Content -->
         <main class="main-content">
             <!-- Header -->
-            <header class="topbar">
-                <div class="topbar-search">
-                    <i class="fa-solid fa-search"></i>
-                    <input type="text" placeholder="Buscar no financeiro...">
+            <header class="header">
+                <div>
+                    <span style="color: var(--text-muted); font-size: 0.875rem;">Bem-vindo(a) de volta,</span>
+                    <div style="font-weight: 600; font-size: 1.1rem;" class="user-name">Carregando...</div>
                 </div>
-                <div class="topbar-user">
-                    <i class="fa-solid fa-bell"></i>
-                    <div class="user-profile">
-                        <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="User">
-                        <span>Administrador</span>
+                
+                <div class="user-profile">
+                    <button class="btn btn-secondary" style="border-radius: 50%; width: 40px; height: 40px; padding: 0;">
+                        <i class="fa-regular fa-bell"></i>
+                    </button>
+                    <div class="avatar">U</div>
+                    <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                        <span style="font-weight: 600; font-size: 0.875rem;" class="user-name">User</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);" class="user-role">Role</span>
                     </div>
+                    <button id="logoutBtn" class="btn btn-danger" style="margin-left: 1rem;">
+                        <i class="fa-solid fa-power-off"></i> Sair
+                    </button>
                 </div>
             </header>
 
             <!-- Page Content -->
-            <div class="content-wrapper">
+            <div class="page-content">
                 <div class="page-header">
                     <h2>Gestão Financeira</h2>
                     <div class="page-actions">
