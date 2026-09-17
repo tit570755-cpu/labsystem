@@ -591,13 +591,13 @@ let filteredAudit = [...auditLog];
 /* ── Auth check ── */
 (function checkAuth() {
   try {
-    const session = JSON.parse(localStorage.getItem('LEAC_session') || 'null');
-    if (!session || session.role !== 'admin') {
+    const session = JSON.parse(localStorage.getItem('labsystem_user') || 'null');
+    if (!session || session.role !== 'administrador') {
       alert('Acesso restrito: apenas administradores.');
       window.location.href = 'index.html';
     } else {
       document.getElementById('sidebar-name').textContent = session.name || CURRENT_USER.name;
-      document.getElementById('sidebar-role').textContent = session.role || 'admin';
+      document.getElementById('sidebar-role').textContent = session.role || 'Administrador';
       document.getElementById('sidebar-avatar').textContent = initials(session.name || 'AD');
     }
   } catch(e) {

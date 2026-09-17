@@ -8,15 +8,15 @@
   --danger-color: #ef4444;
   --warning-color: #f59e0b;
   
-  --bg-main: #0f172a; /* Slate 900 */
-  --bg-card: #1e293b; /* Slate 800 */
-  --bg-input: #334155; /* Slate 700 */
+  --bg-main: #0d1117; /* GitHub Dark bg */
+  --bg-card: #161b22; /* GitHub Dark surface */
+  --bg-input: #21262d; /* GitHub Dark surface2 */
   
   --text-primary: #f8fafc; /* Slate 50 */
   --text-secondary: #cbd5e1; /* Slate 300 */
   --text-muted: #94a3b8; /* Slate 400 */
   
-  --border-color: #334155;
+  --border-color: #30363d;
   
   --sidebar-width: 260px;
   --header-height: 70px;
