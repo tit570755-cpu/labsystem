@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laudos - LabSystem</title>
+    <title>Laudos - LEAC</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -14,7 +14,7 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-brand">
-                <i class="fa-solid fa-flask-vial"></i> LabSystem
+                <i class="fa-solid fa-flask-vial"></i> LEAC
             </div>
             <nav class="sidebar-nav">
                 <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
@@ -22,7 +22,7 @@
                 <a href="requests.html" class="nav-item"><i class="fa-solid fa-file-medical"></i> Requisições</a>
                 <a href="exams.html" class="nav-item"><i class="fa-solid fa-vial"></i> Exames & Resultados</a>
                 <a href="reports.html" class="nav-item active"><i class="fa-solid fa-file-pdf"></i> Laudos</a>
-                <a href="finance.html" class="nav-item"><i class="fa-solid fa-wallet"></i> Financeiro</a>
+                <a href="finance.html" class="nav-item admin-only"><i class="fa-solid fa-wallet"></i> Financeiro</a>
             </nav>
         </aside>
 
@@ -84,6 +84,17 @@
                                     <td><span class="badge badge-released">Liberado</span></td>
                                     <td>
                                         <button class="btn btn-primary" onclick="generatePDF('João Carlos Silva', '20260901')" style="padding: 0.25rem 0.5rem;"><i class="fa-solid fa-file-pdf"></i> Gerar PDF</button>
+                                        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" title="Assinar Digitalmente"><i class="fa-solid fa-signature"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>#20260903</strong></td>
+                                    <td>Carlos Henrique da Silva</td>
+                                    <td>HBsAg, Anti-HBs</td>
+                                    <td>17/04/2026 12:31</td>
+                                    <td><span class="badge badge-released">Liberado</span></td>
+                                    <td>
+                                        <button class="btn btn-primary" onclick="generateHepatitePDF('Carlos Henrique da Silva', '00001')" style="padding: 0.25rem 0.5rem;"><i class="fa-solid fa-file-pdf"></i> Gerar PDF</button>
                                         <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" title="Assinar Digitalmente"><i class="fa-solid fa-signature"></i></button>
                                     </td>
                                 </tr>
@@ -251,6 +262,151 @@
             renderLeuco("Plaquetas", "225mil/mm3", "", "150 a 400 mil/mm3", "");
             
             // 6. FOOTER
+            y = 280;
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.text("Endereço: Av. Dra. Fernandina do Amaral", 14, y);
+            doc.text("\"Em tudo, dai graças.\"", 190, y, { align: 'right' });
+            
+            y += 4;
+            doc.setFont("helvetica", "normal");
+            doc.text("Gentile, 405 - Centro, Ibaiti - PR, 84900-000", 14, y);
+            doc.text("— 1 Tessalonicenses 5:18", 190, y, { align: 'right' });
+            
+            doc.save(`Laudo_LEAC_${protocol}_${patientName.replace(/\s+/g, '_')}.pdf`);
+        }
+
+        function generateHepatitePDF(patientName, protocol) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ format: 'a4', unit: 'mm' });
+            
+            // Helper function to draw dots between label and value
+            const drawDottedLine = (doc, label, value, xStart, y, dotXEnd, valueXOffset = 0, isBold = false) => {
+                doc.setFont("helvetica", isBold ? "bold" : "normal");
+                doc.text(label, xStart, y);
+                const labelWidth = doc.getTextWidth(label);
+                
+                doc.setFont("helvetica", "normal");
+                let currentX = xStart + labelWidth + 1;
+                while (currentX < dotXEnd) {
+                    doc.text(".", currentX, y);
+                    currentX += 1.5;
+                }
+                
+                doc.setFont("helvetica", isBold ? "bold" : "normal");
+                doc.text(`: ${value}`, dotXEnd + 1 + valueXOffset, y);
+            };
+
+            // 1. HEADER
+            doc.setDrawColor(0);
+            doc.setFillColor(240, 248, 255);
+            doc.circle(25, 20, 10, 'F');
+            doc.circle(25, 20, 10, 'S');
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 102, 204);
+            doc.text("UNOPAR", 18, 21);
+            
+            doc.setFillColor(240, 255, 240);
+            doc.circle(185, 20, 10, 'F');
+            doc.circle(185, 20, 10, 'S');
+            doc.setTextColor(0, 128, 0);
+            doc.text("BIOMED", 178, 21);
+            
+            doc.setTextColor(0);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("LEAC Unopar", 105, 22, { align: 'center' });
+            
+            // 2. PATIENT INFO
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            
+            let y = 35;
+            drawDottedLine(doc, "Nome", `00001-${patientName}`, 14, y, 35);
+            drawDottedLine(doc, "Sexo", "Masculino", 14, y+4, 35);
+            drawDottedLine(doc, "Idade", "22 Ano(s) 11 Mes(es) 24 Dia(s)", 14, y+8, 35);
+            drawDottedLine(doc, "Médico(a)", "NÃO INFORMADO", 14, y+12, 35);
+            drawDottedLine(doc, "Convênio", "1 LEAC", 14, y+16, 35);
+            
+            drawDottedLine(doc, "Requisição", protocol, 115, y, 135);
+            drawDottedLine(doc, "Entrada", "21/01/2026", 115, y+4, 135);
+            drawDottedLine(doc, "Impresso", "21/01/2026 12:31", 115, y+8, 135);
+            drawDottedLine(doc, "Destino", "LEAC", 115, y+12, 135);
+            
+            y += 20;
+            
+            doc.setDrawColor(150);
+            doc.setLineWidth(0.2);
+            doc.line(14, y, 180, y);
+            doc.setFontSize(7);
+            doc.text("Pág.: 1/2", 182, y + 1);
+            
+            y += 10;
+            
+            // Section 1: HBsAg
+            doc.setFontSize(13);
+            doc.setFont("helvetica", "bold");
+            doc.text("HBsAg (HEPATITE B)", 14, y);
+            
+            y += 4;
+            doc.setFontSize(7);
+            doc.setFont("helvetica", "normal");
+            doc.text("Material: Soro Coletado em: 21/01/2026 08:04 Método: Imunocromatográfico", 14, y);
+            
+            y += 8;
+            doc.setFontSize(9);
+            drawDottedLine(doc, "HBsAg", "NÃO REAGENTE", 14, y, 55, 0, true);
+            
+            y += 12;
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.text("Valores de Referência", 14, y);
+            
+            y += 5;
+            doc.setFont("helvetica", "normal");
+            doc.text("Não Reagente: Ausência de antígeno", 14, y);
+            y += 4;
+            doc.text("Reagente....: Presença de antígeno", 14, y);
+            
+            y += 20;
+            
+            // Section 2: HBs, ANTI
+            doc.setFontSize(13);
+            doc.setFont("helvetica", "bold");
+            doc.text("HBs, ANTI (HEPATITE B)", 14, y);
+            
+            y += 4;
+            doc.setFontSize(7);
+            doc.setFont("helvetica", "normal");
+            doc.text("Material: Soro Coletado em: 21/01/2026 08:04 Método: Enzima Imunoensaio", 14, y);
+            
+            y += 8;
+            doc.setFontSize(9);
+            drawDottedLine(doc, "Resultado", "Inferior a 2,0 mUI/mL", 14, y, 55, 0, true);
+            
+            y += 12;
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.text("Valores de Referência", 14, y);
+            
+            y += 5;
+            doc.setFont("helvetica", "normal");
+            doc.text("Inferior a 10 mUI/mL = Não reagente", 14, y);
+            y += 4;
+            doc.text("Superior a 10 mUI/mL = Reagente (Imunidade)", 14, y);
+            
+            // Signature
+            y = 250;
+            doc.setFontSize(14);
+            doc.setFont("times", "italic");
+            doc.text("Dr. João Vitor de Souza Lima", 105, y, { align: 'center' });
+            y += 5;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text("CRBM:7459/6", 105, y, { align: 'center' });
+            
+            // FOOTER
             y = 280;
             doc.setFontSize(8);
             doc.setFont("helvetica", "bold");

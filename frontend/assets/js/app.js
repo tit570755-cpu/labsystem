@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
         roleElements.forEach(el => {
             el.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
         });
+
+        // Admin-only menu visibility
+        const adminItems = document.querySelectorAll('.admin-only');
+        if (user.role !== 'administrador') {
+            adminItems.forEach(el => el.style.display = 'none');
+        }
     }
 
     // Logout function
@@ -121,7 +127,7 @@ document.addEventListener('keydown', (e) => {
             case 'p': // Ctrl+P: Pesquisar paciente
                 window.location.href = 'patients.html';
                 break;
-            case 'o': // Ctrl+O: Novo orçamento
+            case 'o': // Ctrl+O: Novo orï¿½amento
                 window.location.href = 'finance.html';
                 break;
             case 'c': // Ctrl+C: Registrar coleta (except when copying text)
@@ -141,7 +147,7 @@ document.addEventListener('keydown', (e) => {
                 window.location.href = 'reports.html';
                 break;
             case 'e': // Ctrl+E: Emitir etiquetas
-                alert('Módulo de Impressão de Etiquetas: Selecione o paciente primeiro.');
+                alert('Mï¿½dulo de Impressï¿½o de Etiquetas: Selecione o paciente primeiro.');
                 break;
             default:
                 prevent = false;

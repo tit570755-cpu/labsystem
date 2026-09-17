@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - LabSystem</title>
+    <title>Dashboard - LEAC</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,7 +13,7 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-brand">
-                <i class="fa-solid fa-flask-vial"></i> LabSystem
+                <i class="fa-solid fa-flask-vial"></i> LEAC
             </div>
             <nav class="sidebar-nav">
                 <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
@@ -21,10 +21,10 @@
                 <a href="requests.html" class="nav-item"><i class="fa-solid fa-file-medical"></i> Requisições</a>
                 <a href="exams.html" class="nav-item"><i class="fa-solid fa-vial"></i> Exames & Resultados</a>
                 <a href="reports.html" class="nav-item"><i class="fa-solid fa-file-pdf"></i> Laudos</a>
-                <a href="finance.html" class="nav-item"><i class="fa-solid fa-wallet"></i> Financeiro</a>
+                <a href="finance.html" class="nav-item admin-only"><i class="fa-solid fa-wallet"></i> Financeiro</a>
                 <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                    <a href="users.html" class="nav-item"><i class="fa-solid fa-user-shield"></i> Gestão de Acessos</a>
-                    <a href="lgpd.html" class="nav-item"><i class="fa-solid fa-shield-halved"></i> Auditoria LGPD</a>
+                    <a href="users.html" class="nav-item admin-only"><i class="fa-solid fa-user-shield"></i> Gestão de Acessos</a>
+                    <a href="lgpd.html" class="nav-item admin-only"><i class="fa-solid fa-shield-halved"></i> Auditoria LGPD</a>
                 </div>
             </nav>
         </aside>
@@ -98,11 +98,15 @@
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
                     <div class="card">
                         <h3 style="margin-bottom: 1rem; font-size: 1rem;">Volume de Exames (Últimos 7 dias)</h3>
-                        <canvas id="volumeChart" height="250"></canvas>
+                        <div style="position: relative; height: 280px; max-height: 280px; overflow: hidden;">
+                            <canvas id="volumeChart"></canvas>
+                        </div>
                     </div>
                     <div class="card">
                         <h3 style="margin-bottom: 1rem; font-size: 1rem;">Status dos Exames</h3>
-                        <canvas id="statusChart" height="250"></canvas>
+                        <div style="position: relative; height: 280px; max-height: 280px; overflow: hidden;">
+                            <canvas id="statusChart"></canvas>
+                        </div>
                     </div>
                 </div>
 

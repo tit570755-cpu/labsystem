@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Relatórios Financeiros – LabSystem</title>
+  <title>Relatórios Financeiros – LEAC</title>
   <link rel="stylesheet" href="style.css" />
   <script src="api.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -215,7 +215,7 @@
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="logo-icon">L</div>
-    <span>LabSystem</span>
+    <span>LEAC</span>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section">Principal</div>
@@ -450,7 +450,7 @@
 /* ── Auth ── */
 (function checkAuth(){
   try {
-    const s = JSON.parse(localStorage.getItem('labsystem_session')||'null');
+    const s = JSON.parse(localStorage.getItem('LEAC_session')||'null');
     if (!s || s.role !== 'admin') {
       alert('Acesso restrito: apenas administradores.');
       window.location.href = 'index.html';
